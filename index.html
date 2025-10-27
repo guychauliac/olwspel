@@ -175,9 +175,14 @@
         <!-- ADMIN LOGIN GEBIED -->
         <div id="admin-login-area">
             <hr style="border-color: #5864c8; margin-top: 20px;">
-            <h2>Admin Toegang</h2>
-            <input type="password" id="admin-password" placeholder="Voer wachtwoord in">
-            <button class="admin-button" onclick="checkAdminPassword()">Activeer Admin Modus</button>
+            <h2>Normale Admin Toegang (Simulatie)</h2>
+            <input type="password" id="admin-password" placeholder="Voer normaal wachtwoord in">
+            <button class="admin-button" onclick="checkAdminPassword()">Activeer Normale Admin Modus</button>
+            
+            <hr style="border-color: #e43f5a; margin-top: 20px;">
+            <h2>Debug Toegang (Live Afstand)</h2>
+            <input type="password" id="debug-password" placeholder="Voer debug wachtwoord in">
+            <button class="admin-button" style="background-color: #e43f5a;" onclick="checkDebugAdminPassword()">Activeer Debug Modus</button>
         </div>
         
         <!-- ADMIN DASHBOARD GEBIED -->
@@ -191,6 +196,9 @@
             <button class="admin-button" onclick="stopAdminMode()">Verlaat Admin Modus</button>
         </div>
 
+        <!-- NIEUW: STOP KNOP VOOR DEBUG MODUS -->
+        <button id="debug-stop-button" class="admin-button hidden" style="background-color: #e43f5a; margin-top: 15px;" onclick="stopDebugAdminMode()">Verlaat Debug Modus</button>
+
     </div>
 
     <script>
@@ -198,7 +206,8 @@
         const PROXIMITY_RADIUS_METERS = 20; 
         // Nieuwe drempel: toon de afstand alleen als de speler binnen 100 meter van het dichtstbijzijnde doel is.
         const DISTANCE_DISPLAY_THRESHOLD_METERS = 100; 
-        const ADMIN_PASSWORD = "admin456"; // Het wachtwoord voor de admin-modus
+        const ADMIN_PASSWORD = "admin456"; // Het wachtwoord voor de normale admin-modus
+        const DEBUG_ADMIN_PASSWORD = "debug789"; // NIEUW: Het wachtwoord voor de debug admin-modus
 
         // Dit array bevat nu alleen de oorspronkelijk gevraagde locatie met de nieuwe tekst.
         const ALL_LOCATIONS = [
@@ -212,6 +221,7 @@
 
         // *** STATE & DOM ELEMENTEN ***
         let watchID = null; // Opslag voor de actieve watch-ID
+        let isDebugAdminMode = false; // NIEUW: Staat om de debug-modus te volgen
         const statusDisplay = document.getElementById('status-display');
         const infoDisplay = document.getElementById('info-display');
         const errorDisplay = document.getElementById('error-display');
@@ -220,6 +230,8 @@
         const adminLoginArea = document.getElementById('admin-login-area');
         const adminDashboard = document.getElementById('admin-dashboard');
         const adminPasswordInput = document.getElementById('admin-password');
+        const debugPasswordInput = document.getElementById('debug-password'); // NIEUW
+        const debugStopButton = document.getElementById('debug-stop-button'); // NIEUW
         const locationList = document.getElementById('location-list');
 
 
@@ -253,6 +265,7 @@
             
             let closestDistance = Infinity;
             let closestLocationInfo = null;
+            let allDistancesHtml = ''; // NIEUW: Voor debug modus
 
             // Loop door alle locaties om de dichtstbijzijnde te vinden
             for (const target of ALL_LOCATIONS) {
@@ -265,7 +278,19 @@
                 if (distance <= PROXIMITY_RADIUS_METERS) {
                     // Als we binnen de straal zijn, tonen we de info
                     closestLocationInfo = target.info;
-                    break; 
+                    // In het geval van meerdere locaties stoppen we hier zodra er één gevonden is.
+                    // Aangezien er nu maar één is, is dit prima.
+                    // In debug modus willen we wellicht nog steeds alle afstanden tonen, dus we breken niet als het debug mode is.
+                    if (!isDebugAdminMode) {
+                        break; 
+                    }
+                }
+                
+                // NIEUW: Verzamel afstanden voor debug mode
+                if (isDebugAdminMode) {
+                    // Kleur de afstand op basis van hoe dichtbij
+                    const distanceColor = distance <= PROXIMITY_RADIUS_METERS ? '#66FF66' : (distance <= DISTANCE_DISPLAY_THRESHOLD_METERS ? '#FFD700' : '#CCCCCC');
+                    allDistancesHtml += `<br>➡️ Afstand tot ${target.name}: <span style="color: ${distanceColor}">${distance.toFixed(2)} meter</span>`;
                 }
             }
 
@@ -274,11 +299,17 @@
                 📍 Huidige Positie: ${userLat.toFixed(5)}, ${userLon.toFixed(5)}
             `;
 
-            // Toon afstand alleen als we binnen de 100m drempel zijn
-            if (closestDistance <= DISTANCE_DISPLAY_THRESHOLD_METERS) {
-                // Groen als we binnen de 20m detectiestraal zijn, Goud/Geel anders (maar binnen 100m)
+            if (isDebugAdminMode) {
+                // Toon alle afstanden in debug mode
+                statusHtml += allDistancesHtml;
+                statusDisplay.style.backgroundColor = '#e43f5a'; // Debug kleur
+            } else if (closestDistance <= DISTANCE_DISPLAY_THRESHOLD_METERS) {
+                // Toon afstand alleen als we binnen de 100m drempel zijn (normale modus)
                 const distanceColor = closestDistance <= PROXIMITY_RADIUS_METERS ? '#66FF66' : '#FFD700'; 
                 statusHtml += `<br>➡️ Afstand tot Dichtstbijzijnde Doel: <span style="color: ${distanceColor}">${closestDistance.toFixed(2)} meter</span>`;
+                statusDisplay.style.backgroundColor = '#3b3a4d'; // Standaard kleur
+            } else {
+                 statusDisplay.style.backgroundColor = '#3b3a4d'; // Standaard kleur
             }
             
             statusDisplay.innerHTML = statusHtml;
@@ -288,10 +319,10 @@
                 infoDisplay.innerHTML = closestLocationInfo;
                 infoDisplay.classList.remove('hidden');
                 statusDisplay.style.backgroundColor = '#2e7d32'; // Groene status
-            } else {
+            } else if (!isDebugAdminMode) { // Verberg info alleen als we niet in debug mode zijn
                 infoDisplay.classList.add('hidden');
-                statusDisplay.style.backgroundColor = '#3b3a4d'; // Standaard status
             }
+
             errorDisplay.classList.add('hidden'); // Verberg foutmelding bij succes
         }
 
@@ -325,6 +356,17 @@
                 navigator.geolocation.clearWatch(watchID);
                 watchID = null;
             }
+            
+            if (isDebugAdminMode) {
+                // In debug mode, verbergen we de knop niet, maar tonen we de debug stop knop.
+                locationButton.classList.add('hidden'); // Verberg toggle knop
+                debugStopButton.classList.remove('hidden'); // Toon stop debug knop
+                statusDisplay.innerHTML = 'Debug tracking gestopt. Verlaat Debug Modus om terug te gaan.';
+                statusDisplay.style.backgroundColor = '#e43f5a'; // Blijf debug kleur
+                return; // Geen verdere reset
+            }
+
+            // Normale modus
             locationButton.textContent = "Start Locatie Check";
             locationButton.classList.remove('active'); // Verwijder actieve klasse
             
@@ -349,8 +391,13 @@
                 return;
             }
             
-            // Monitor is gestopt, dus start deze
+            // Zorg ervoor dat admin/debug UI verborgen is als we starten
+            isDebugAdminMode = false; // Zet debug uit
+            adminDashboard.classList.add('hidden'); // Verberg dashboard
+            debugStopButton.classList.add('hidden'); // Verberg debug stop knop
             adminLoginArea.classList.add('hidden'); // Verberg admin login
+
+            // Monitor is gestopt, dus start deze
             locationButton.textContent = "Stop Locatie Check";
             locationButton.classList.add('active'); // Voeg actieve klasse toe
 
@@ -380,7 +427,21 @@
                 enterAdminMode();
             } else {
                 adminPasswordInput.value = '';
-                errorDisplay.innerHTML = 'Ongeldig wachtwoord voor Admin Modus.';
+                errorDisplay.innerHTML = 'Ongeldig wachtwoord voor Normale Admin Modus.';
+                errorDisplay.classList.remove('hidden');
+            }
+        }
+        
+        /**
+         * Checkt het DEBUG wachtwoord en activeert de debug admin modus.
+         */
+        function checkDebugAdminPassword() {
+            const enteredPassword = debugPasswordInput.value;
+            if (enteredPassword === DEBUG_ADMIN_PASSWORD) {
+                enterDebugAdminMode();
+            } else {
+                debugPasswordInput.value = '';
+                errorDisplay.innerHTML = 'Ongeldig wachtwoord voor Debug Admin Modus.';
                 errorDisplay.classList.remove('hidden');
             }
         }
@@ -400,11 +461,13 @@
         }
 
         /**
-         * Activeert de admin modus: stopt tracking en toont dashboard.
+         * Activeert de normale admin modus: stopt tracking en toont dashboard.
          */
         function enterAdminMode() {
-            // 1. Stop normale tracking als deze actief is
-            stopLocationCheck(false); 
+            // 1. Stop tracking en debug mode als ze actief waren
+            if (watchID !== null) stopLocationCheck(false);
+            isDebugAdminMode = false;
+            debugStopButton.classList.add('hidden'); 
 
             // 2. Toon dashboard en verberg login/normale knop
             adminLoginArea.classList.add('hidden');
@@ -415,20 +478,75 @@
             
             // 3. Update status
             statusDisplay.style.backgroundColor = '#795548'; 
-            statusDisplay.innerHTML = 'ADMIN MODUS ACTIEF. Geolocation is uitgeschakeld.';
+            statusDisplay.innerHTML = 'ADMIN MODUS ACTIEF (Simulatie). Geolocation is uitgeschakeld.';
 
             // 4. Render de locatielijst
             renderLocationList();
         }
+        
+        /**
+         * Activeert de debug admin modus: start tracking en toont live afstand.
+         */
+        function enterDebugAdminMode() {
+            // 1. Stop normale tracking en reset admin dashboard als ze actief waren
+            if (watchID !== null) stopLocationCheck(false);
+            adminDashboard.classList.add('hidden');
+            
+            // 2. Zet de debug vlag aan
+            isDebugAdminMode = true; 
+
+            // 3. UI aanpassingen
+            adminLoginArea.classList.add('hidden');
+            locationButton.classList.add('hidden'); // Verberg normale toggle knop
+            debugStopButton.classList.remove('hidden'); // Toon stop debug knop
+            errorDisplay.classList.add('hidden');
+            infoDisplay.classList.add('hidden');
+            
+            // 4. Start de locatie check in debug mode
+            if (watchID === null) {
+                watchID = navigator.geolocation.watchPosition(success, error, {
+                    enableHighAccuracy: true,
+                    timeout: 5000,
+                    maximumAge: 0
+                });
+            }
+
+            // Update status
+            statusDisplay.style.backgroundColor = '#e43f5a'; 
+            statusDisplay.innerHTML = 'DEBUG ADMIN MODUS ACTIEF. Wachten op GPS-positie...';
+        }
 
         /**
-         * Verlaat de admin modus en toont de normale UI.
+         * Verlaat de normale admin modus en toont de normale UI.
          */
         function stopAdminMode() {
             adminDashboard.classList.add('hidden');
             adminLoginArea.classList.remove('hidden');
             locationButton.classList.remove('hidden');
             adminPasswordInput.value = ''; // Wachtwoord wissen
+            statusDisplay.style.backgroundColor = '#3b3a4d';
+            statusDisplay.innerHTML = 'Druk op de knop om de locatiecheck te starten.';
+        }
+        
+        /**
+         * Verlaat de debug admin modus.
+         */
+        function stopDebugAdminMode() {
+            // 1. Stop de tracking
+            if (watchID !== null) {
+                navigator.geolocation.clearWatch(watchID);
+                watchID = null;
+            }
+            
+            // 2. Reset de vlag en de UI naar de startstatus
+            isDebugAdminMode = false;
+            debugStopButton.classList.add('hidden'); 
+            locationButton.classList.remove('hidden');
+
+            // Terug naar normale start UI
+            adminLoginArea.classList.remove('hidden');
+            adminPasswordInput.value = ''; 
+            debugPasswordInput.value = ''; 
             statusDisplay.style.backgroundColor = '#3b3a4d';
             statusDisplay.innerHTML = 'Druk op de knop om de locatiecheck te starten.';
         }
