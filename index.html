@@ -77,7 +77,7 @@
         }
 
         /* Knop Stijl */
-        button {
+        .location-button {
             background-color: #e43f5a;
             color: white;
             padding: 12px 25px;
@@ -86,17 +86,23 @@
             cursor: pointer;
             font-size: 1em;
             font-weight: bold;
-            transition: background-color 0.3s, transform 0.1s;
+            transition: background-color 0.3s, transform 0.1s, box-shadow 0.3s;
             box-shadow: 0 4px 15px rgba(228, 63, 90, 0.4);
             margin-top: 15px;
         }
+        
+        /* Visuele feedback wanneer de tracking actief is */
+        .location-button.active {
+            background-color: #38734e !important; /* Groen-achtige kleur */
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.8); /* Groene gloed */
+        }
 
-        button:hover {
+        .location-button:hover {
             background-color: #c22d46;
             transform: translateY(-2px);
         }
 
-        button:active {
+        .location-button:active {
             transform: translateY(0);
         }
 
@@ -135,11 +141,11 @@
             <!-- Eventuele foutmeldingen komen hier -->
         </div>
 
-        <button onclick="startLocationCheck()">Start Locatie Check</button>
+        <button id="location-button" class="location-button" onclick="toggleLocationCheck()">Start Locatie Check</button>
     </div>
 
     <script>
-        // Doelcoördinaten in decimale graden (DD)
+        // *** CONFIGURATIE ***
         const TARGET_LOCATION = {
             // 51°12'21.8"N is 51.205778
             latitude: 51.205778, 
@@ -147,14 +153,16 @@
             longitude: 4.492806, 
             info: "Je bent er, hier is wat informatie - GEFELICITEERD! 🎉"
         };
-
-        // De straal in meters waarbinnen de informatie getoond moet worden
         const PROXIMITY_RADIUS_METERS = 20; 
 
-        // DOM Elementen
+        // *** STATE & DOM ELEMENTEN ***
+        let watchID = null; // Opslag voor de actieve watch-ID
         const statusDisplay = document.getElementById('status-display');
         const infoDisplay = document.getElementById('info-display');
         const errorDisplay = document.getElementById('error-display');
+        const locationButton = document.getElementById('location-button');
+
+        // *** GEOLOCATIE FUNCTIES ***
 
         /**
          * Functie om de afstand tussen twee coördinaten te berekenen (Haversine formule).
@@ -187,22 +195,21 @@
 
             // Update status met huidige positie en afstand
             statusDisplay.innerHTML = `
-                **Actief** (Nauwkeurigheid: ${position.coords.accuracy.toFixed(1)}m)<br>
+                **Tracking Actief** (Nauwkeurigheid: ${position.coords.accuracy.toFixed(1)}m)<br>
                 📍 Huidige Positie: ${userLat.toFixed(5)}, ${userLon.toFixed(5)}<br>
                 ➡️ Afstand tot Doel: <span style="color: ${distance <= PROXIMITY_RADIUS_METERS ? '#66FF66' : '#FF9999'}">${distance.toFixed(2)} meter</span>
             `;
             
             // Controleer of de gebruiker binnen de straal is (20 meter)
             if (distance <= PROXIMITY_RADIUS_METERS) {
-                // Gebruiker is in de buurt! Toon de geheime info.
                 infoDisplay.innerHTML = TARGET_LOCATION.info;
                 infoDisplay.classList.remove('hidden');
                 statusDisplay.style.backgroundColor = '#2e7d32'; // Groene status
             } else {
-                // Gebruiker is te ver weg
                 infoDisplay.classList.add('hidden');
                 statusDisplay.style.backgroundColor = '#3b3a4d'; // Standaard status
             }
+            errorDisplay.classList.add('hidden'); // Verberg foutmelding bij succes
         }
 
         /**
@@ -210,35 +217,69 @@
          */
         function error(err) {
             console.warn(`ERROR(${err.code}): ${err.message}`);
-            let errorMessage = "Er is een fout opgetreden bij het ophalen van je locatie.";
+            
+            let errorMessage = "Er is een fout opgetreden bij het ophalen van je locatie. Code: " + err.code;
 
             if (err.code === 1) {
                 errorMessage = "Locatie toegang is geweigerd. Schakel locatievoorzieningen in voor deze site.";
+                stopLocationCheck(true); // Stop de monitor bij permanente fout
             } else if (err.code === 2) {
-                errorMessage = "Locatie informatie is niet beschikbaar.";
-            }
+                errorMessage = "Locatie informatie is niet beschikbaar. Probeer het later opnieuw.";
+            } else if (err.code === 3) {
+                 errorMessage = "Time-out: locatie kon niet op tijd worden bepaald. Probeer opnieuw.";
+                 // Voor deze fout laten we de watcher lopen, tenzij de gebruiker stopt
+            } 
             
             statusDisplay.innerHTML = 'Locatie niet beschikbaar.';
-            errorDisplay.innerHTML = `Fout: ${errorMessage} (Code: ${err.code})`;
+            errorDisplay.innerHTML = `Fout: ${errorMessage}`;
             errorDisplay.classList.remove('hidden');
         }
 
         /**
-         * Start het locatie detectieproces.
+         * Stopt de actieve locatie-monitor en reset de UI.
          */
-        function startLocationCheck() {
-            errorDisplay.classList.add('hidden');
+        function stopLocationCheck(isError = false) {
+            if (watchID !== null) {
+                navigator.geolocation.clearWatch(watchID);
+                watchID = null;
+            }
+            locationButton.textContent = "Start Locatie Check";
+            locationButton.classList.remove('active'); // Verwijder actieve klasse
             
+            if (!isError) {
+                statusDisplay.innerHTML = 'Locatiecheck gestopt. Druk op de knop om opnieuw te starten.';
+                statusDisplay.style.backgroundColor = '#3b3a4d';
+            }
+        }
+        
+        /**
+         * Start of stopt de locatie-monitor.
+         */
+        function toggleLocationCheck() {
+            if (watchID !== null) {
+                // Monitor is actief, dus stop deze
+                stopLocationCheck();
+                return;
+            }
+
             if (!navigator.geolocation) {
                 statusDisplay.innerHTML = 'Geolocation wordt niet ondersteund door je browser.';
                 return;
             }
             
-            statusDisplay.innerHTML = 'Locatie wordt opgevraagd...';
-            
+            // Monitor is gestopt, dus start deze
+            locationButton.textContent = "Stop Locatie Check";
+            locationButton.classList.add('active'); // Voeg actieve klasse toe
+
+            // Prominent bericht dat de tracking gestart is
+            statusDisplay.innerHTML = `
+                **LOCATIE VOLGEN IS GESTART. U HOEFT NIET OPNIEUW TE DRUKKEN.** <br>
+                Wachten op eerste GPS-positie...
+            `;
+            statusDisplay.style.backgroundColor = '#5c677f'; 
+
             // watchPosition blijft de positie monitoren
-            // highAccuracy is cruciaal voor een kleine straal van 20m.
-            navigator.geolocation.watchPosition(success, error, {
+            watchID = navigator.geolocation.watchPosition(success, error, {
                 enableHighAccuracy: true,
                 timeout: 5000,
                 maximumAge: 0
