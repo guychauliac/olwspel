@@ -267,11 +267,10 @@
                 }
             }
 
-            // Update status met dichtstbijzijnde afstand
+            // Update status (afstand tot doel verwijderd op verzoek van gebruiker)
             statusDisplay.innerHTML = `
                 **Tracking Actief** (Nauwkeurigheid: ${position.coords.accuracy.toFixed(1)}m)<br>
-                📍 Huidige Positie: ${userLat.toFixed(5)}, ${userLon.toFixed(5)}<br>
-                ➡️ Afstand tot Doel: <span style="color: ${closestDistance <= PROXIMITY_RADIUS_METERS ? '#66FF66' : '#FF9999'}">${closestDistance.toFixed(2)} meter</span>
+                📍 Huidige Positie: ${userLat.toFixed(5)}, ${userLon.toFixed(5)}
             `;
             
             // Toon/verberg geheime info
