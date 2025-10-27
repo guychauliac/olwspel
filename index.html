@@ -209,13 +209,19 @@
         const ADMIN_PASSWORD = "admin456"; // Het wachtwoord voor de normale admin-modus
         const DEBUG_ADMIN_PASSWORD = "debug789"; // NIEUW: Het wachtwoord voor de debug admin-modus
 
-        // Dit array bevat nu alleen de oorspronkelijk gevraagde locatie met de nieuwe tekst.
+        // Dit array bevat nu alle te zoeken locaties.
         const ALL_LOCATIONS = [
             {
                 name: "Geheime Ophaalpunt",
                 latitude: 51.205778, 
                 longitude: 4.492806, 
                 info: "Je bent er, hier is wat informatie"
+            },
+            {
+                name: "Tweede Punt",
+                latitude: 51.2045, 
+                longitude: 4.49147, 
+                info: "goed gedaan, je bent op het tweede punt"
             }
         ];
 
@@ -277,13 +283,8 @@
 
                 if (distance <= PROXIMITY_RADIUS_METERS) {
                     // Als we binnen de straal zijn, tonen we de info
-                    closestLocationInfo = target.info;
-                    // In het geval van meerdere locaties stoppen we hier zodra er één gevonden is.
-                    // Aangezien er nu maar één is, is dit prima.
-                    // In debug modus willen we wellicht nog steeds alle afstanden tonen, dus we breken niet als het debug mode is.
-                    if (!isDebugAdminMode) {
-                        break; 
-                    }
+                    // We stoppen NIET met zoeken, want er kunnen meerdere locaties tegelijk bereikt worden.
+                    closestLocationInfo = target.info; 
                 }
                 
                 // NIEUW: Verzamel afstanden voor debug mode
