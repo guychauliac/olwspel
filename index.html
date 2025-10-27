@@ -210,18 +210,19 @@
         const DEBUG_ADMIN_PASSWORD = "debug789"; // NIEUW: Het wachtwoord voor de debug admin-modus
 
         // Dit array bevat nu alle te zoeken locaties.
+        // Let op: De coördinaten zijn ingesteld op een locatie in Antwerpen (België).
         const ALL_LOCATIONS = [
             {
-                name: "Geheime Ophaalpunt",
+                name: "Geheime Ophaalpunt (Antwerpen)",
                 latitude: 51.205778, 
                 longitude: 4.492806, 
-                info: "Je bent er, hier is wat informatie"
+                info: "Je bent er! Hier is de code voor de kluis: 8234."
             },
             {
-                name: "Tweede Punt",
+                name: "Tweede Punt (Dichtbijzijnd)",
                 latitude: 51.2045, 
                 longitude: 4.49147, 
-                info: "goed gedaan, je bent op het tweede punt"
+                info: "Goed gedaan, je bent op het tweede punt! De volgende aanwijzing is: 'Kijk naar de hoogste toren'."
             }
         ];
 
@@ -270,21 +271,21 @@
             const userLon = position.coords.longitude;
             
             let closestDistance = Infinity;
-            let closestLocationInfo = null;
+            let achievedLocationsInfo = []; // Houd alle bereikte locaties bij
             let allDistancesHtml = ''; // NIEUW: Voor debug modus
 
-            // Loop door alle locaties om de dichtstbijzijnde te vinden
+            // Loop door alle locaties om de dichtstbijzijnde te vinden en de status te controleren
             for (const target of ALL_LOCATIONS) {
                 const distance = getDistance(userLat, userLon, target.latitude, target.longitude);
                 
+                // Bepaal de dichtstbijzijnde afstand
                 if (distance < closestDistance) {
                     closestDistance = distance;
                 }
 
+                // Check of de locatie bereikt is
                 if (distance <= PROXIMITY_RADIUS_METERS) {
-                    // Als we binnen de straal zijn, tonen we de info
-                    // We stoppen NIET met zoeken, want er kunnen meerdere locaties tegelijk bereikt worden.
-                    closestLocationInfo = target.info; 
+                    achievedLocationsInfo.push(`<h3>✅ Gevonden: ${target.name}</h3><p>${target.info}</p>`); 
                 }
                 
                 // NIEUW: Verzamel afstanden voor debug mode
@@ -299,31 +300,40 @@
                 **Tracking Actief** (Nauwkeurigheid: ${position.coords.accuracy.toFixed(1)}m)<br>
                 📍 Huidige Positie: ${userLat.toFixed(5)}, ${userLon.toFixed(5)}
             `;
+            
+            let isClose = false;
+            let displayColor = '#3b3a4d';
 
             if (isDebugAdminMode) {
                 // Toon alle afstanden in debug mode
                 statusHtml += allDistancesHtml;
-                statusDisplay.style.backgroundColor = '#e43f5a'; // Debug kleur
+                displayColor = '#e43f5a'; // Debug kleur
             } else if (closestDistance <= DISTANCE_DISPLAY_THRESHOLD_METERS) {
                 // Toon afstand alleen als we binnen de 100m drempel zijn (normale modus)
+                isClose = true;
                 const distanceColor = closestDistance <= PROXIMITY_RADIUS_METERS ? '#66FF66' : '#FFD700'; 
                 statusHtml += `<br>➡️ Afstand tot Dichtstbijzijnde Doel: <span style="color: ${distanceColor}">${closestDistance.toFixed(2)} meter</span>`;
-                statusDisplay.style.backgroundColor = '#3b3a4d'; // Standaard kleur
             } else {
-                 statusDisplay.style.backgroundColor = '#3b3a4d'; // Standaard kleur
+                statusHtml += `<br>Beweeg dichterbij het doel om de afstand te zien.`;
             }
             
             statusDisplay.innerHTML = statusHtml;
             
             // Toon/verberg geheime info
-            if (closestLocationInfo) {
-                infoDisplay.innerHTML = closestLocationInfo;
+            if (achievedLocationsInfo.length > 0) {
+                infoDisplay.innerHTML = achievedLocationsInfo.join('<hr style="margin: 10px 0; border-color: rgba(255,255,255,0.2);">');
                 infoDisplay.classList.remove('hidden');
-                statusDisplay.style.backgroundColor = '#2e7d32'; // Groene status
-            } else if (!isDebugAdminMode) { // Verberg info alleen als we niet in debug mode zijn
+                displayColor = '#2e7d32'; // Groene status als info is gevonden
+            } else if (!isDebugAdminMode) { 
                 infoDisplay.classList.add('hidden');
+            } else if (isDebugAdminMode && !isClose) {
+                // Als we in debug modus zijn maar niets hebben gevonden, kunnen we de info leegmaken
+                infoDisplay.innerHTML = 'Nog geen locatie gevonden.';
+                infoDisplay.classList.remove('hidden');
             }
 
+
+            statusDisplay.style.backgroundColor = displayColor;
             errorDisplay.classList.add('hidden'); // Verberg foutmelding bij succes
         }
 
@@ -347,6 +357,7 @@
             statusDisplay.innerHTML = 'Locatie niet beschikbaar.';
             errorDisplay.innerHTML = `Fout: ${errorMessage}`;
             errorDisplay.classList.remove('hidden');
+            statusDisplay.style.backgroundColor = '#6d424b'; // Donkerrood/bruin voor foutstatus
         }
 
         /**
@@ -381,6 +392,11 @@
          * Start of stopt de locatie-monitor.
          */
         function toggleLocationCheck() {
+            // Verberg eventuele admin/debug UI
+            if (!adminLoginArea.classList.contains('hidden')) {
+                adminLoginArea.classList.add('hidden');
+            }
+
             if (watchID !== null) {
                 // Monitor is actief, dus stop deze
                 stopLocationCheck();
@@ -396,8 +412,7 @@
             isDebugAdminMode = false; // Zet debug uit
             adminDashboard.classList.add('hidden'); // Verberg dashboard
             debugStopButton.classList.add('hidden'); // Verberg debug stop knop
-            adminLoginArea.classList.add('hidden'); // Verberg admin login
-
+            
             // Monitor is gestopt, dus start deze
             locationButton.textContent = "Stop Locatie Check";
             locationButton.classList.add('active'); // Voeg actieve klasse toe
@@ -448,7 +463,7 @@
         }
 
         /**
-         * Rendert de knoppen voor alle locaties in het dashboard (nu slechts 1).
+         * Rendert de knoppen voor alle locaties in het dashboard.
          */
         function renderLocationList() {
             locationList.innerHTML = '';
@@ -503,7 +518,7 @@
             errorDisplay.classList.add('hidden');
             infoDisplay.classList.add('hidden');
             
-            // 4. Start de locatie check in debug mode
+            // 4. Start de locatie check in debug mode (als deze nog niet actief is)
             if (watchID === null) {
                 watchID = navigator.geolocation.watchPosition(success, error, {
                     enableHighAccuracy: true,
@@ -527,6 +542,7 @@
             adminPasswordInput.value = ''; // Wachtwoord wissen
             statusDisplay.style.backgroundColor = '#3b3a4d';
             statusDisplay.innerHTML = 'Druk op de knop om de locatiecheck te starten.';
+            infoDisplay.classList.add('hidden');
         }
         
         /**
@@ -550,6 +566,7 @@
             debugPasswordInput.value = ''; 
             statusDisplay.style.backgroundColor = '#3b3a4d';
             statusDisplay.innerHTML = 'Druk op de knop om de locatiecheck te starten.';
+            infoDisplay.classList.add('hidden');
         }
 
         /**
@@ -558,8 +575,8 @@
         function simulateLocation(index) {
             const location = ALL_LOCATIONS[index];
             
-            // Simuleer succes en toon info - TOONT NU EXACT DE GEBRUIKERSINFO
-            infoDisplay.innerHTML = location.info;
+            // Simuleer succes en toon info
+            infoDisplay.innerHTML = `<h3>✅ Gevonden: ${location.name}</h3><p>${location.info}</p>`;
             infoDisplay.classList.remove('hidden');
             
             // Update status (dit is admin-specifiek)
