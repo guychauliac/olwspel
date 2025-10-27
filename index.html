@@ -61,6 +61,13 @@
             text-align: left;
         }
 
+        /* Specifieke waarschuwing voor nauwkeurigheid */
+        .accuracy-warning {
+            background-color: #FFC107 !important; /* Geel */
+            color: #1a1a2e !important; /* Donkere tekst */
+            border: 2px solid #FF9800;
+        }
+
         /* Doel Informatie Weergave (het geheime bericht) */
         .target-info {
             padding: 20px;
@@ -273,21 +280,22 @@
 
             // NIEUW: Controleer op te lage nauwkeurigheid (alleen in normale modus)
             if (!isDebugAdminMode && accuracy >= 2000) {
+                // Voeg de specifieke waarschuwingsklasse toe
+                statusDisplay.classList.add('accuracy-warning'); 
+                
                 statusDisplay.innerHTML = `
                     ⚠️ **LAGE NAUWKEURIGHEID GEDETECTEERD!** ⚠️<br>
                     Nauwkeurigheid: **${accuracy.toFixed(1)}m**.<br>
-                    Pas de apparaatinstellingen aan (Locatie op 'Hoge Nauwkeurigheid' / Wi-Fi aan) en herstart de Check.
+                    **Oplossing:** Wijzig de rechten van uw browser (bijv. Chrome) zodat deze gebruik kan maken van de exacte locatie en herstart de Check.
                 `;
-                statusDisplay.style.backgroundColor = '#FFC107'; // Gele waarschuwing
-                statusDisplay.style.color = '#1a1a2e'; // Donkere tekst op geel
                 infoDisplay.classList.add('hidden');
                 errorDisplay.classList.add('hidden');
                 return; // Stop de verwerking van de locatie.
             }
             
-            // Reset text color for normal status messages (in case it was yellow/dark text before)
-            statusDisplay.style.color = '#e5e5f7'; 
-
+            // Reset de waarschuwingsklasse als de nauwkeurigheid goed is
+            statusDisplay.classList.remove('accuracy-warning');
+            
             let closestDistance = Infinity;
             let achievedLocationsInfo = []; // Houd alle bereikte locaties bij
             let allDistancesHtml = ''; // NIEUW: Voor debug modus
@@ -372,6 +380,7 @@
                  errorMessage = "Time-out: locatie kon niet op tijd worden bepaald. Probeer opnieuw.";
             } 
             
+            statusDisplay.classList.remove('accuracy-warning'); // Zorg ervoor dat de waarschuwing is verwijderd
             statusDisplay.innerHTML = 'Locatie niet beschikbaar.';
             errorDisplay.innerHTML = `Fout: ${errorMessage}`;
             errorDisplay.classList.remove('hidden');
@@ -436,6 +445,7 @@
             locationButton.classList.add('active'); // Voeg actieve klasse toe
 
             // Prominent bericht dat de tracking gestart is
+            statusDisplay.classList.remove('accuracy-warning');
             statusDisplay.innerHTML = `
                 **LOCATIE VOLGEN IS GESTART. U HOEFT NIET OPNIEUW TE DRUKKEN.** <br>
                 Wachten op eerste GPS-positie...
@@ -511,6 +521,7 @@
             infoDisplay.classList.add('hidden');
             
             // 3. Update status
+            statusDisplay.classList.remove('accuracy-warning');
             statusDisplay.style.backgroundColor = '#795548'; 
             statusDisplay.innerHTML = 'ADMIN MODUS ACTIEF (Simulatie). Geolocation is uitgeschakeld.';
 
@@ -546,6 +557,7 @@
             }
 
             // Update status
+            statusDisplay.classList.remove('accuracy-warning');
             statusDisplay.style.backgroundColor = '#e43f5a'; 
             statusDisplay.innerHTML = 'DEBUG ADMIN MODUS ACTIEF. Wachten op GPS-positie...';
         }
@@ -558,6 +570,7 @@
             adminLoginArea.classList.remove('hidden');
             locationButton.classList.remove('hidden');
             adminPasswordInput.value = ''; // Wachtwoord wissen
+            statusDisplay.classList.remove('accuracy-warning');
             statusDisplay.style.backgroundColor = '#3b3a4d';
             statusDisplay.innerHTML = 'Druk op de knop om de locatiecheck te starten.';
             infoDisplay.classList.add('hidden');
@@ -582,6 +595,7 @@
             adminLoginArea.classList.remove('hidden');
             adminPasswordInput.value = ''; 
             debugPasswordInput.value = ''; 
+            statusDisplay.classList.remove('accuracy-warning');
             statusDisplay.style.backgroundColor = '#3b3a4d';
             statusDisplay.innerHTML = 'Druk op de knop om de locatiecheck te starten.';
             infoDisplay.classList.add('hidden');
@@ -598,6 +612,7 @@
             infoDisplay.classList.remove('hidden');
             
             // Update status (dit is admin-specifiek)
+            statusDisplay.classList.remove('accuracy-warning');
             statusDisplay.innerHTML = `
                 **ADMIN SIMULATIE:** U bent nu op **${location.name}**.<br>
                 De geheime informatie is ontgrendeld.
