@@ -216,13 +216,13 @@
                 name: "Geheime Ophaalpunt (Antwerpen)",
                 latitude: 51.205778, 
                 longitude: 4.492806, 
-                info: "Je bent er! Hier is de code voor de kluis: 8234."
+                info: "goed gedaan, dit is de eerste locatie"
             },
             {
                 name: "Tweede Punt (Dichtbijzijnd)",
                 latitude: 51.2045, 
                 longitude: 4.49147, 
-                info: "Goed gedaan, je bent op het tweede punt! De volgende aanwijzing is: 'Kijk naar de hoogste toren'."
+                info: "fantastisch, je bent op de tweede locatie"
             }
         ];
 
@@ -269,7 +269,25 @@
         function success(position) {
             const userLat = position.coords.latitude;
             const userLon = position.coords.longitude;
+            const accuracy = position.coords.accuracy; // Haal nauwkeurigheid op
+
+            // NIEUW: Controleer op te lage nauwkeurigheid (alleen in normale modus)
+            if (!isDebugAdminMode && accuracy >= 2000) {
+                statusDisplay.innerHTML = `
+                    ⚠️ **LAGE NAUWKEURIGHEID GEDETECTEERD!** ⚠️<br>
+                    Nauwkeurigheid: **${accuracy.toFixed(1)}m**.<br>
+                    Pas de apparaatinstellingen aan (Locatie op 'Hoge Nauwkeurigheid' / Wi-Fi aan) en herstart de Check.
+                `;
+                statusDisplay.style.backgroundColor = '#FFC107'; // Gele waarschuwing
+                statusDisplay.style.color = '#1a1a2e'; // Donkere tekst op geel
+                infoDisplay.classList.add('hidden');
+                errorDisplay.classList.add('hidden');
+                return; // Stop de verwerking van de locatie.
+            }
             
+            // Reset text color for normal status messages (in case it was yellow/dark text before)
+            statusDisplay.style.color = '#e5e5f7'; 
+
             let closestDistance = Infinity;
             let achievedLocationsInfo = []; // Houd alle bereikte locaties bij
             let allDistancesHtml = ''; // NIEUW: Voor debug modus
