@@ -196,6 +196,8 @@
     <script>
         // *** CONFIGURATIE ***
         const PROXIMITY_RADIUS_METERS = 20; 
+        // Nieuwe drempel: toon de afstand alleen als de speler binnen 100 meter van het dichtstbijzijnde doel is.
+        const DISTANCE_DISPLAY_THRESHOLD_METERS = 100; 
         const ADMIN_PASSWORD = "admin456"; // Het wachtwoord voor de admin-modus
 
         // Dit array bevat nu alleen de oorspronkelijk gevraagde locatie met de nieuwe tekst.
@@ -252,7 +254,7 @@
             let closestDistance = Infinity;
             let closestLocationInfo = null;
 
-            // Loop door alle locaties om de dichtstbijzijnde te vinden (nu slechts 1)
+            // Loop door alle locaties om de dichtstbijzijnde te vinden
             for (const target of ALL_LOCATIONS) {
                 const distance = getDistance(userLat, userLon, target.latitude, target.longitude);
                 
@@ -267,11 +269,19 @@
                 }
             }
 
-            // Update status (afstand tot doel verwijderd op verzoek van gebruiker)
-            statusDisplay.innerHTML = `
+            let statusHtml = `
                 **Tracking Actief** (Nauwkeurigheid: ${position.coords.accuracy.toFixed(1)}m)<br>
                 📍 Huidige Positie: ${userLat.toFixed(5)}, ${userLon.toFixed(5)}
             `;
+
+            // Toon afstand alleen als we binnen de 100m drempel zijn
+            if (closestDistance <= DISTANCE_DISPLAY_THRESHOLD_METERS) {
+                // Groen als we binnen de 20m detectiestraal zijn, Goud/Geel anders (maar binnen 100m)
+                const distanceColor = closestDistance <= PROXIMITY_RADIUS_METERS ? '#66FF66' : '#FFD700'; 
+                statusHtml += `<br>➡️ Afstand tot Dichtstbijzijnde Doel: <span style="color: ${distanceColor}">${closestDistance.toFixed(2)} meter</span>`;
+            }
+            
+            statusDisplay.innerHTML = statusHtml;
             
             // Toon/verberg geheime info
             if (closestLocationInfo) {
