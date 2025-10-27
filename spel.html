@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Locatie Jager Spel</title>
+    <style>
+        /* Globale Stijlen en Reset */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a2e; /* Donkere, chique achtergrond */
+            color: #e5e5f7;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+            background-image: radial-gradient(#2c2c4b 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        .container {
+            background-color: #162447;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(88, 100, 200, 0.5); /* Coole gloed */
+            max-width: 90%;
+            width: 500px;
+            border: 1px solid #5864c8;
+        }
+
+        h1 {
+            color: #e43f5a; /* Accentkleur */
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            text-shadow: 0 0 5px #e43f5a;
+        }
+
+        p {
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        /* Status Weergave */
+        .status-message {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-weight: bold;
+            background-color: #3b3a4d;
+            transition: background-color 0.5s ease;
+            text-align: left;
+        }
+
+        /* Doel Informatie Weergave (het geheime bericht) */
+        .target-info {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            background-color: #2e7d32; /* Groen voor succes */
+            color: #ffffff;
+            font-size: 1.2em;
+            font-weight: bold;
+            box-shadow: 0 0 15px #4caf50;
+            animation: pulse 1.5s infinite alternate; /* Animatie om de aandacht te trekken */
+        }
+
+        /* Fout Melding */
+        .error-message {
+            padding: 10px;
+            margin: 15px 0;
+            border-radius: 5px;
+            background-color: #c62828; /* Rood voor fouten */
+            color: white;
+        }
+
+        /* Knop Stijl */
+        button {
+            background-color: #e43f5a;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 4px 15px rgba(228, 63, 90, 0.4);
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background-color: #c22d46;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Hulklassen */
+        .hidden {
+            display: none;
+        }
+
+        /* Keyframe Animatie */
+        @keyframes pulse {
+            from {
+                opacity: 1;
+                transform: scale(1);
+            }
+            to {
+                opacity: 0.8;
+                transform: scale(1.03);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Locatie Jager Spel ✨</h1>
+        <p>Beweeg naar de geheime locatie om de informatie te ontgrendelen! De detectiezone is **20 meter**.</p>
+
+        <div id="status-display" class="status-message">
+            Druk op de knop om de locatiecheck te starten.
+        </div>
+
+        <div id="info-display" class="hidden target-info">
+            <!-- Informatie verschijnt hier als je dichtbij bent -->
+        </div>
+
+        <div id="error-display" class="error-message hidden">
+            <!-- Eventuele foutmeldingen komen hier -->
+        </div>
+
+        <button onclick="startLocationCheck()">Start Locatie Check</button>
+    </div>
+
+    <script>
+        // Doelcoördinaten in decimale graden (DD)
+        const TARGET_LOCATION = {
+            // 51°12'21.8"N is 51.205778
+            latitude: 51.205778, 
+            // 4°29'34.1"E is 4.492806
+            longitude: 4.492806, 
+            info: "Je bent er, hier is wat informatie - GEFELICITEERD! 🎉"
+        };
+
+        // De straal in meters waarbinnen de informatie getoond moet worden
+        const PROXIMITY_RADIUS_METERS = 20; 
+
+        // DOM Elementen
+        const statusDisplay = document.getElementById('status-display');
+        const infoDisplay = document.getElementById('info-display');
+        const errorDisplay = document.getElementById('error-display');
+
+        /**
+         * Functie om de afstand tussen twee coördinaten te berekenen (Haversine formule).
+         * @returns {number} Afstand in meters
+         */
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // Aarde straal in meters
+            const φ1 = lat1 * Math.PI / 180;
+            const φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180;
+            const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+            return R * c; // Afstand in meters
+        }
+
+        /**
+         * Succes-callback voor de geolocatie.
+         */
+        function success(position) {
+            const userLat = position.coords.latitude;
+            const userLon = position.coords.longitude;
+            
+            // Bereken de afstand tot het doel
+            const distance = getDistance(userLat, userLon, TARGET_LOCATION.latitude, TARGET_LOCATION.longitude);
+
+            // Update status met huidige positie en afstand
+            statusDisplay.innerHTML = `
+                **Actief** (Nauwkeurigheid: ${position.coords.accuracy.toFixed(1)}m)<br>
+                📍 Huidige Positie: ${userLat.toFixed(5)}, ${userLon.toFixed(5)}<br>
+                ➡️ Afstand tot Doel: <span style="color: ${distance <= PROXIMITY_RADIUS_METERS ? '#66FF66' : '#FF9999'}">${distance.toFixed(2)} meter</span>
+            `;
+            
+            // Controleer of de gebruiker binnen de straal is (20 meter)
+            if (distance <= PROXIMITY_RADIUS_METERS) {
+                // Gebruiker is in de buurt! Toon de geheime info.
+                infoDisplay.innerHTML = TARGET_LOCATION.info;
+                infoDisplay.classList.remove('hidden');
+                statusDisplay.style.backgroundColor = '#2e7d32'; // Groene status
+            } else {
+                // Gebruiker is te ver weg
+                infoDisplay.classList.add('hidden');
+                statusDisplay.style.backgroundColor = '#3b3a4d'; // Standaard status
+            }
+        }
+
+        /**
+         * Fout-callback voor de geolocatie.
+         */
+        function error(err) {
+            console.warn(`ERROR(${err.code}): ${err.message}`);
+            let errorMessage = "Er is een fout opgetreden bij het ophalen van je locatie.";
+
+            if (err.code === 1) {
+                errorMessage = "Locatie toegang is geweigerd. Schakel locatievoorzieningen in voor deze site.";
+            } else if (err.code === 2) {
+                errorMessage = "Locatie informatie is niet beschikbaar.";
+            }
+            
+            statusDisplay.innerHTML = 'Locatie niet beschikbaar.';
+            errorDisplay.innerHTML = `Fout: ${errorMessage} (Code: ${err.code})`;
+            errorDisplay.classList.remove('hidden');
+        }
+
+        /**
+         * Start het locatie detectieproces.
+         */
+        function startLocationCheck() {
+            errorDisplay.classList.add('hidden');
+            
+            if (!navigator.geolocation) {
+                statusDisplay.innerHTML = 'Geolocation wordt niet ondersteund door je browser.';
+                return;
+            }
+            
+            statusDisplay.innerHTML = 'Locatie wordt opgevraagd...';
+            
+            // watchPosition blijft de positie monitoren
+            // highAccuracy is cruciaal voor een kleine straal van 20m.
+            navigator.geolocation.watchPosition(success, error, {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+            });
+        }
+    </script>
+</body>
+</html>
