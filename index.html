@@ -3,208 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Locatie Jager Spel</title>
+    <title>Scout Locatie Missie</title>
+    <!-- Laad een robuuster lettertype, zoals 'Roboto Slab' of 'Bree Serif' --><link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* Globale Stijlen en Reset */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a1a2e; /* Donkere, chique achtergrond */
-            color: #e5e5f7;
+            font-family: 'Roboto', sans-serif; /* Lichter lettertype voor body */
+            background-color: #f0f4c3; /* Lichte beige/groene achtergrond, zoals een open veld */
+            color: #3e2723; /* Donkerbruin voor tekst */
             margin: 0;
-            padding: 0;
+            padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             text-align: center;
-            background-image: radial-gradient(#2c2c4b 1px, transparent 1px);
-            background-size: 30px 30px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="%23dce775" d="M0 0h10v10H0zm10 10h10v10H10zM0 10h10v10H0zm10 0h10v10H10z" opacity=".2"/></svg>'); /* Subtiel patroon, zoals een canvas textuur */
         }
 
         .container {
-            background-color: #162447;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 0 30px rgba(88, 100, 200, 0.5); /* Coole gloed */
-            max-width: 90%;
-            width: 500px;
-            border: 1px solid #5864c8;
+            background-color: #ffffff; /* Witte achtergrond voor inhoud */
+            padding: 30px; 
+            border-radius: 10px; /* Zachte hoeken */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* Robuuste schaduw */
+            max-width: 95%;
+            width: 480px;
+            box-sizing: border-box;
+            border: 2px solid #a1887f; /* Houten-achtige rand */
         }
 
         h1 {
-            color: #e43f5a; /* Accentkleur */
-            margin-bottom: 20px;
+            font-family: 'Bree Serif', serif; /* Robuuster lettertype voor titels */
+            color: #388e3c; /* Donkergroen (boskleur) */
+            margin-bottom: 15px;
             font-size: 2.5em;
-            text-shadow: 0 0 5px #e43f5a;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
 
         h2 {
-            color: #5864c8;
-            margin-top: 25px;
-            margin-bottom: 15px;
+            font-family: 'Bree Serif', serif;
+            color: #689f38; /* Lichtere groen */
+            margin-top: 20px;
+            margin-bottom: 10px;
             font-size: 1.5em;
         }
 
         p {
-            margin-bottom: 30px;
-            font-size: 1.1em;
+            margin-bottom: 20px;
+            font-size: 1em;
+            color: #5d4037; /* Middelbruin */
         }
 
         /* Status Weergave */
         .status-message {
             padding: 15px;
-            margin: 20px 0;
+            margin: 15px 0;
             border-radius: 8px;
-            font-weight: bold;
-            background-color: #3b3a4d;
-            transition: background-color 0.5s ease;
+            font-weight: 700;
+            background-color: #e8f5e9; /* Zeer lichtgroen */
+            color: #1b5e20; /* Donkergroene tekst */
+            border-left: 5px solid #388e3c; /* Accent balk in donkergroen */
+            transition: all 0.3s ease;
             text-align: left;
         }
 
-        /* Specifieke waarschuwing voor nauwkeurigheid */
+        /* Specifieke waarschuwing voor nauwkeurigheid (geel/oranje - zonsondergang/vuur) */
         .accuracy-warning {
-            background-color: #FFC107 !important; /* Geel */
-            color: #1a1a2e !important; /* Donkere tekst */
-            border: 2px solid #FF9800;
+            background-color: #fff8e1 !important; /* Zeer licht oranje */
+            color: #f57c00 !important; /* Donker oranje tekst */
+            border-left: 5px solid #f57c00 !important; /* Opvallende oranje balk */
         }
 
-        /* Doel Informatie Weergave (het geheime bericht) */
+        /* Doel Informatie Weergave (het geheime bericht - Succes Groen) */
         .target-info {
             padding: 20px;
             margin: 20px 0;
             border-radius: 10px;
-            background-color: #2e7d32; /* Groen voor succes */
+            background-color: #4CAF50; /* Klassiek groen voor succes */
             color: #ffffff;
-            font-size: 1.2em;
+            font-size: 1.1em;
             font-weight: bold;
-            box-shadow: 0 0 15px #4caf50;
-            animation: pulse 1.5s infinite alternate; /* Animatie om de aandacht te trekken */
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+            animation: pulse 1.5s infinite alternate; 
         }
 
-        /* Fout Melding */
+        /* Fout Melding (Rood) */
         .error-message {
             padding: 10px;
             margin: 15px 0;
             border-radius: 5px;
-            background-color: #c62828; /* Rood voor fouten */
-            color: white;
+            background-color: #ffebee; /* Zeer licht rood */
+            color: #c62828; /* Donkerrood tekst */
+            border-left: 5px solid #e53935;
+            font-weight: bold;
         }
 
-        /* Knop Stijl */
+        /* Knop Stijl (Primair: Bosgroen) */
         .location-button, .admin-button {
-            background-color: #e43f5a;
+            background-color: #689f38; /* Middelgroen, bosachtig */
             color: white;
             padding: 12px 25px;
             border: none;
-            border-radius: 25px;
+            border-radius: 8px; 
             cursor: pointer;
             font-size: 1em;
             font-weight: bold;
             transition: background-color 0.3s, transform 0.1s, box-shadow 0.3s;
-            box-shadow: 0 4px 15px rgba(228, 63, 90, 0.4);
-            margin: 15px 5px 5px 5px;
+            box-shadow: 0 4px 10px rgba(104, 159, 56, 0.4); 
+            margin: 10px 0;
             width: 100%;
+            text-transform: uppercase; /* Hoofdletters voor knoptekst */
+            letter-spacing: 0.5px;
         }
         
-        /* Visuele feedback wanneer de tracking actief is */
+        /* Visuele feedback wanneer de tracking actief is (Donkerder Groen) */
         .location-button.active {
-            background-color: #38734e !important; /* Groen-achtige kleur */
-            box-shadow: 0 0 15px rgba(76, 175, 80, 0.8); /* Groene gloed */
+            background-color: #388e3c !important; 
+            box-shadow: 0 0 15px rgba(56, 142, 60, 0.5); 
         }
 
         .location-button:hover, .admin-button:hover {
-            background-color: #c22d46;
-            transform: translateY(-2px);
+            background-color: #558b2f; /* Iets donkerder bij hover */
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(104, 159, 56, 0.5); 
         }
 
         .location-button:active, .admin-button:active {
             transform: translateY(0);
         }
-        
+
         /* Admin specifieke stijl */
         #admin-login-area input {
             padding: 10px;
             border-radius: 5px;
-            border: 1px solid #5864c8;
-            background-color: #1a1a2e;
-            color: white;
+            border: 1px solid #a1887f; /* Bruine rand */
+            background-color: #fdfdfd;
+            color: #3e2723;
             width: calc(100% - 22px);
             margin-bottom: 10px;
         }
 
+        /* Simulatie Knoppen (Houtbruin) */
         #admin-dashboard .location-button {
-            background-color: #5864c8; /* Blauw voor simulatie knoppen */
-            margin-bottom: 10px;
+            background-color: #795548; 
+            box-shadow: 0 4px 10px rgba(121, 85, 72, 0.3);
         }
         #admin-dashboard .location-button:hover {
-            background-color: #4b58b9;
+            background-color: #6d4c41;
         }
 
+        /* Debug Stop Knop (Oranje/Vuur) */
+        #debug-stop-button {
+            background-color: #ef6c00 !important; /* Fel oranje */
+            box-shadow: 0 4px 10px rgba(239, 108, 0, 0.3);
+        }
+        #debug-stop-button:hover {
+            background-color: #e65100 !important;
+        }
 
+        /* Horizontale lijnen */
+        hr {
+            border-color: #d7ccc8 !important; /* Lichte bruine scheiding */
+            margin: 20px 0;
+        }
+        
         /* Hulklassen */
         .hidden {
             display: none;
         }
 
-        /* Keyframe Animatie */
+        /* Keyframe Animatie (voor de gevonden info) */
         @keyframes pulse {
             from {
                 opacity: 1;
                 transform: scale(1);
             }
             to {
-                opacity: 0.8;
-                transform: scale(1.03);
+                opacity: 0.95;
+                transform: scale(1.01);
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>✨ Locatie Jager Spel ✨</h1>
-        <p>Beweeg naar de geheime locatie om de informatie te ontgrendelen! De detectiezone is **20 meter**.</p>
+        <h1>🌳 Scout Missie Start! 🧭</h1>
+        <p>Volg het pad naar de geheime locatie om de informatie te ontgrendelen! Zoekradius: **20 meter**.</p>
 
         <div id="status-display" class="status-message">
-            Druk op de knop om de locatiecheck te starten.
+            Druk op de knop om je reis te beginnen.
         </div>
 
         <div id="info-display" class="hidden target-info">
-            <!-- Informatie verschijnt hier als je dichtbij bent -->
-        </div>
+            <!-- Informatie verschijnt hier als je dichtbij bent --></div>
 
         <div id="error-display" class="error-message hidden">
-            <!-- Eventuele foutmeldingen komen hier -->
-        </div>
+            <!-- Eventuele foutmeldingen komen hier --></div>
 
-        <!-- Normale Spelmodus Knop -->
-        <button id="location-button" class="location-button" onclick="toggleLocationCheck()">Start Locatie Check</button>
+        <!-- Normale Spelmodus Knop --><button id="location-button" class="location-button" onclick="toggleLocationCheck()">Start Missie</button>
 
-        <!-- ADMIN LOGIN GEBIED -->
-        <div id="admin-login-area">
-            <hr style="border-color: #5864c8; margin-top: 20px;">
-            <h2>Normale Admin Toegang (Simulatie)</h2>
-            <input type="password" id="admin-password" placeholder="Voer normaal wachtwoord in">
-            <button class="admin-button" onclick="checkAdminPassword()">Activeer Normale Admin Modus</button>
+        <!-- ADMIN LOGIN GEBIED --><div id="admin-login-area">
+            <hr>
+            <h2>Kamp Hoofdkwartier Toegang (Simulatie)</h2>
+            <input type="password" id="admin-password" placeholder="Wachtwoord H.Q.">
+            <button class="admin-button" onclick="checkAdminPassword()">Activeer H.Q. Modus</button>
             
-            <hr style="border-color: #e43f5a; margin-top: 20px;">
-            <h2>Debug Toegang (Live Afstand)</h2>
-            <input type="password" id="debug-password" placeholder="Voer debug wachtwoord in">
-            <button class="admin-button" style="background-color: #e43f5a;" onclick="checkDebugAdminPassword()">Activeer Debug Modus</button>
+            <hr style="border-color: #ffb74d; margin-top: 20px;">
+            <h2>Verkenner Toegang (Live Afstand)</h2>
+            <input type="password" id="debug-password" placeholder="Wachtwoord Verkenner">
+            <button class="admin-button" style="background-color: #ff9800;" onclick="checkDebugAdminPassword()">Activeer Verkenner Modus</button>
         </div>
         
-        <!-- ADMIN DASHBOARD GEBIED -->
-        <div id="admin-dashboard" class="hidden">
-            <hr style="border-color: #5864c8; margin-top: 20px;">
-            <h2>Admin Dashboard (Simulatie)</h2>
-            <p style="margin: 15px 0 20px;">Klik op een locatie om succes te simuleren en de geheime info te tonen.</p>
+        <!-- ADMIN DASHBOARD GEBIED --><div id="admin-dashboard" class="hidden">
+            <hr>
+            <h2>Kamp Hoofdkwartier (Simulatie)</h2>
+            <p style="margin: 15px 0 20px;">Klik op een locatie om deze te 'vinden' en de info te tonen.</p>
             <div id="location-list">
-                <!-- Locatieknoppen komen hier -->
-            </div>
-            <button class="admin-button" onclick="stopAdminMode()">Verlaat Admin Modus</button>
+                <!-- Locatieknoppen komen hier --></div>
+            <button class="admin-button" onclick="stopAdminMode()">Verlaat H.Q. Modus</button>
         </div>
 
-        <!-- NIEUW: STOP KNOP VOOR DEBUG MODUS -->
-        <button id="debug-stop-button" class="admin-button hidden" style="background-color: #e43f5a; margin-top: 15px;" onclick="stopDebugAdminMode()">Verlaat Debug Modus</button>
+        <!-- NIEUW: STOP KNOP VOOR DEBUG MODUS --><button id="debug-stop-button" class="admin-button hidden" onclick="stopDebugAdminMode()">Verlaat Verkenner Modus</button>
 
     </div>
 
@@ -278,15 +298,15 @@
             const userLon = position.coords.longitude;
             const accuracy = position.coords.accuracy; // Haal nauwkeurigheid op
 
-            // NIEUW: Controleer op te lage nauwkeurigheid (alleen in normale modus)
+            // Controleer op te lage nauwkeurigheid (alleen in normale modus)
             if (!isDebugAdminMode && accuracy >= 2000) {
                 // Voeg de specifieke waarschuwingsklasse toe
                 statusDisplay.classList.add('accuracy-warning'); 
                 
                 statusDisplay.innerHTML = `
-                    ⚠️ **LAGE NAUWKEURIGHEID GEDETECTEERD!** ⚠️<br>
-                    Nauwkeurigheid: **${accuracy.toFixed(1)}m**.<br>
-                    **Oplossing:** Wijzig de rechten van uw browser (bijv. Chrome) zodat deze gebruik kan maken van de exacte locatie en herstart de Check.
+                    ⚠️ **LET OP! LOCATIE ONNAUWKEURIG!** ⚠️<br>
+                    Gemeten nauwkeurigheid: **${accuracy.toFixed(1)}m**.<br>
+                    **Oplossing:** Wijzig de rechten van uw browser (bijv. Chrome) zodat deze gebruik kan maken van de exacte locatie en herstart de Missie.
                 `;
                 infoDisplay.classList.add('hidden');
                 errorDisplay.classList.add('hidden');
@@ -298,7 +318,7 @@
             
             let closestDistance = Infinity;
             let achievedLocationsInfo = []; // Houd alle bereikte locaties bij
-            let allDistancesHtml = ''; // NIEUW: Voor debug modus
+            let allDistancesHtml = ''; // Voor debug modus
 
             // Loop door alle locaties om de dichtstbijzijnde te vinden en de status te controleren
             for (const target of ALL_LOCATIONS) {
@@ -314,30 +334,32 @@
                     achievedLocationsInfo.push(`<h3>✅ Gevonden: ${target.name}</h3><p>${target.info}</p>`); 
                 }
                 
-                // NIEUW: Verzamel afstanden voor debug mode
+                // Verzamel afstanden voor debug mode
                 if (isDebugAdminMode) {
                     // Kleur de afstand op basis van hoe dichtbij
-                    const distanceColor = distance <= PROXIMITY_RADIUS_METERS ? '#66FF66' : (distance <= DISTANCE_DISPLAY_THRESHOLD_METERS ? '#FFD700' : '#CCCCCC');
+                    const distanceColor = distance <= PROXIMITY_RADIUS_METERS ? '#4CAF50' : (distance <= DISTANCE_DISPLAY_THRESHOLD_METERS ? '#ff9800' : '#888888');
                     allDistancesHtml += `<br>➡️ Afstand tot ${target.name}: <span style="color: ${distanceColor}">${distance.toFixed(2)} meter</span>`;
                 }
             }
 
             let statusHtml = `
-                **Tracking Actief** (Nauwkeurigheid: ${position.coords.accuracy.toFixed(1)}m)<br>
+                **Verkenner Actief** (Nauwkeurigheid: ${position.coords.accuracy.toFixed(1)}m)<br>
                 📍 Huidige Positie: ${userLat.toFixed(5)}, ${userLon.toFixed(5)}
             `;
             
             let isClose = false;
-            let displayColor = '#3b3a4d';
+            let displayColor = '#e8f5e9'; // Standaard achtergrond van status-message (lichtgroen)
+            let textColor = '#1b5e20'; // Standaard tekstkleur (donkergroen)
 
             if (isDebugAdminMode) {
                 // Toon alle afstanden in debug mode
                 statusHtml += allDistancesHtml;
-                displayColor = '#e43f5a'; // Debug kleur
+                displayColor = '#ffe0b2'; // Lichtoranje voor debug status (zonsopgang)
+                textColor = '#e65100'; // Donkeroranje tekst
             } else if (closestDistance <= DISTANCE_DISPLAY_THRESHOLD_METERS) {
                 // Toon afstand alleen als we binnen de 100m drempel zijn (normale modus)
                 isClose = true;
-                const distanceColor = closestDistance <= PROXIMITY_RADIUS_METERS ? '#66FF66' : '#FFD700'; 
+                const distanceColor = closestDistance <= PROXIMITY_RADIUS_METERS ? '#4CAF50' : '#ff9800'; 
                 statusHtml += `<br>➡️ Afstand tot Dichtstbijzijnde Doel: <span style="color: ${distanceColor}">${closestDistance.toFixed(2)} meter</span>`;
             } else {
                 statusHtml += `<br>Beweeg dichterbij het doel om de afstand te zien.`;
@@ -349,7 +371,7 @@
             if (achievedLocationsInfo.length > 0) {
                 infoDisplay.innerHTML = achievedLocationsInfo.join('<hr style="margin: 10px 0; border-color: rgba(255,255,255,0.2);">');
                 infoDisplay.classList.remove('hidden');
-                displayColor = '#2e7d32'; // Groene status als info is gevonden
+                // De achtergrondkleur van statusDisplay wordt niet overschreven bij succes; de infoDisplay springt in het oog.
             } else if (!isDebugAdminMode) { 
                 infoDisplay.classList.add('hidden');
             } else if (isDebugAdminMode && !isClose) {
@@ -358,8 +380,8 @@
                 infoDisplay.classList.remove('hidden');
             }
 
-
             statusDisplay.style.backgroundColor = displayColor;
+            statusDisplay.style.color = textColor;
             errorDisplay.classList.add('hidden'); // Verberg foutmelding bij succes
         }
 
@@ -381,10 +403,11 @@
             } 
             
             statusDisplay.classList.remove('accuracy-warning'); // Zorg ervoor dat de waarschuwing is verwijderd
+            statusDisplay.style.backgroundColor = '#ffebee'; // Licht rood voor foutstatus
+            statusDisplay.style.color = '#c62828'; // Donkerrode tekst
             statusDisplay.innerHTML = 'Locatie niet beschikbaar.';
             errorDisplay.innerHTML = `Fout: ${errorMessage}`;
             errorDisplay.classList.remove('hidden');
-            statusDisplay.style.backgroundColor = '#6d424b'; // Donkerrood/bruin voor foutstatus
         }
 
         /**
@@ -400,18 +423,20 @@
                 // In debug mode, verbergen we de knop niet, maar tonen we de debug stop knop.
                 locationButton.classList.add('hidden'); // Verberg toggle knop
                 debugStopButton.classList.remove('hidden'); // Toon stop debug knop
-                statusDisplay.innerHTML = 'Debug tracking gestopt. Verlaat Debug Modus om terug te gaan.';
-                statusDisplay.style.backgroundColor = '#e43f5a'; // Blijf debug kleur
+                statusDisplay.innerHTML = 'Verkenner tracking gestopt. Verlaat Verkenner Modus om terug te gaan.';
+                statusDisplay.style.backgroundColor = '#fdf3e2'; 
+                statusDisplay.style.color = '#e65100'; // Oranje tekst om te benadrukken dat het debug was
                 return; // Geen verdere reset
             }
 
             // Normale modus
-            locationButton.textContent = "Start Locatie Check";
+            locationButton.textContent = "Start Missie";
             locationButton.classList.remove('active'); // Verwijder actieve klasse
             
             if (!isError) {
-                statusDisplay.innerHTML = 'Locatiecheck gestopt. Druk op de knop om opnieuw te starten.';
-                statusDisplay.style.backgroundColor = '#3b3a4d';
+                statusDisplay.innerHTML = 'Missie gepauzeerd. Druk op de knop om de reis te vervolgen.';
+                statusDisplay.style.backgroundColor = '#e8f5e9';
+                statusDisplay.style.color = '#1b5e20';
             }
         }
         
@@ -441,16 +466,17 @@
             debugStopButton.classList.add('hidden'); // Verberg debug stop knop
             
             // Monitor is gestopt, dus start deze
-            locationButton.textContent = "Stop Locatie Check";
+            locationButton.textContent = "Pauzeer Missie";
             locationButton.classList.add('active'); // Voeg actieve klasse toe
 
             // Prominent bericht dat de tracking gestart is
             statusDisplay.classList.remove('accuracy-warning');
+            statusDisplay.style.color = '#1b5e20';
             statusDisplay.innerHTML = `
-                **LOCATIE VOLGEN IS GESTART. U HOEFT NIET OPNIEUW TE DRUKKEN.** <br>
-                Wachten op eerste GPS-positie...
+                **MISSIE GESTART!** <br>
+                Even wachten op contact met de satellieten...
             `;
-            statusDisplay.style.backgroundColor = '#5c677f'; 
+            statusDisplay.style.backgroundColor = '#dcedc8'; /* Iets donkerder groen voor actieve status */
 
             // watchPosition blijft de positie monitoren
             watchID = navigator.geolocation.watchPosition(success, error, {
@@ -471,7 +497,7 @@
                 enterAdminMode();
             } else {
                 adminPasswordInput.value = '';
-                errorDisplay.innerHTML = 'Ongeldig wachtwoord voor Normale Admin Modus.';
+                errorDisplay.innerHTML = 'Ongeldig wachtwoord voor Kamp Hoofdkwartier.';
                 errorDisplay.classList.remove('hidden');
             }
         }
@@ -485,7 +511,7 @@
                 enterDebugAdminMode();
             } else {
                 debugPasswordInput.value = '';
-                errorDisplay.innerHTML = 'Ongeldig wachtwoord voor Debug Admin Modus.';
+                errorDisplay.innerHTML = 'Ongeldig wachtwoord voor Verkenner Toegang.';
                 errorDisplay.classList.remove('hidden');
             }
         }
@@ -522,8 +548,9 @@
             
             // 3. Update status
             statusDisplay.classList.remove('accuracy-warning');
-            statusDisplay.style.backgroundColor = '#795548'; 
-            statusDisplay.innerHTML = 'ADMIN MODUS ACTIEF (Simulatie). Geolocation is uitgeschakeld.';
+            statusDisplay.style.backgroundColor = '#bcaaa4'; /* Steen/zandkleur voor admin */
+            statusDisplay.style.color = '#3e2723';
+            statusDisplay.innerHTML = 'KAMP HOOFDKWARTIER ACTIEF (Simulatie). Geolocation is uitgeschakeld.';
 
             // 4. Render de locatielijst
             renderLocationList();
@@ -558,8 +585,9 @@
 
             // Update status
             statusDisplay.classList.remove('accuracy-warning');
-            statusDisplay.style.backgroundColor = '#e43f5a'; 
-            statusDisplay.innerHTML = 'DEBUG ADMIN MODUS ACTIEF. Wachten op GPS-positie...';
+            statusDisplay.style.backgroundColor = '#ffcc80'; /* Zacht oranje voor debug status */
+            statusDisplay.style.color = '#e65100';
+            statusDisplay.innerHTML = 'VERKENNER MODUS ACTIEF. Wachten op satelliet contact...';
         }
 
         /**
@@ -571,8 +599,9 @@
             locationButton.classList.remove('hidden');
             adminPasswordInput.value = ''; // Wachtwoord wissen
             statusDisplay.classList.remove('accuracy-warning');
-            statusDisplay.style.backgroundColor = '#3b3a4d';
-            statusDisplay.innerHTML = 'Druk op de knop om de locatiecheck te starten.';
+            statusDisplay.style.backgroundColor = '#e8f5e9';
+            statusDisplay.style.color = '#1b5e20';
+            statusDisplay.innerHTML = 'Druk op de knop om je reis te beginnen.';
             infoDisplay.classList.add('hidden');
         }
         
@@ -596,8 +625,9 @@
             adminPasswordInput.value = ''; 
             debugPasswordInput.value = ''; 
             statusDisplay.classList.remove('accuracy-warning');
-            statusDisplay.style.backgroundColor = '#3b3a4d';
-            statusDisplay.innerHTML = 'Druk op de knop om de locatiecheck te starten.';
+            statusDisplay.style.backgroundColor = '#e8f5e9';
+            statusDisplay.style.color = '#1b5e20';
+            statusDisplay.innerHTML = 'Druk op de knop om je reis te beginnen.';
             infoDisplay.classList.add('hidden');
         }
 
@@ -613,11 +643,12 @@
             
             // Update status (dit is admin-specifiek)
             statusDisplay.classList.remove('accuracy-warning');
+            statusDisplay.style.color = '#3e2723';
             statusDisplay.innerHTML = `
-                **ADMIN SIMULATIE:** U bent nu op **${location.name}**.<br>
+                **KAMP H.Q. RAPPORT:** Locatie **${location.name}** is gevonden.<br>
                 De geheime informatie is ontgrendeld.
             `;
-            statusDisplay.style.backgroundColor = '#2e7d32'; // Groen voor simulatie succes
+            statusDisplay.style.backgroundColor = '#c5e1a5'; // Licht groen voor simulatie succes
         }
     </script>
 </body>
