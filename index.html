@@ -38,6 +38,13 @@
             text-shadow: 0 0 5px #e43f5a;
         }
 
+        h2 {
+            color: #5864c8;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
         p {
             margin-bottom: 30px;
             font-size: 1.1em;
@@ -77,7 +84,7 @@
         }
 
         /* Knop Stijl */
-        .location-button {
+        .location-button, .admin-button {
             background-color: #e43f5a;
             color: white;
             padding: 12px 25px;
@@ -88,7 +95,8 @@
             font-weight: bold;
             transition: background-color 0.3s, transform 0.1s, box-shadow 0.3s;
             box-shadow: 0 4px 15px rgba(228, 63, 90, 0.4);
-            margin-top: 15px;
+            margin: 15px 5px 5px 5px;
+            width: 100%;
         }
         
         /* Visuele feedback wanneer de tracking actief is */
@@ -97,14 +105,34 @@
             box-shadow: 0 0 15px rgba(76, 175, 80, 0.8); /* Groene gloed */
         }
 
-        .location-button:hover {
+        .location-button:hover, .admin-button:hover {
             background-color: #c22d46;
             transform: translateY(-2px);
         }
 
-        .location-button:active {
+        .location-button:active, .admin-button:active {
             transform: translateY(0);
         }
+        
+        /* Admin specifieke stijl */
+        #admin-login-area input {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #5864c8;
+            background-color: #1a1a2e;
+            color: white;
+            width: calc(100% - 22px);
+            margin-bottom: 10px;
+        }
+
+        #admin-dashboard .location-button {
+            background-color: #5864c8; /* Blauw voor simulatie knoppen */
+            margin-bottom: 10px;
+        }
+        #admin-dashboard .location-button:hover {
+            background-color: #4b58b9;
+        }
+
 
         /* Hulklassen */
         .hidden {
@@ -141,19 +169,44 @@
             <!-- Eventuele foutmeldingen komen hier -->
         </div>
 
+        <!-- Normale Spelmodus Knop -->
         <button id="location-button" class="location-button" onclick="toggleLocationCheck()">Start Locatie Check</button>
+
+        <!-- ADMIN LOGIN GEBIED -->
+        <div id="admin-login-area">
+            <hr style="border-color: #5864c8; margin-top: 20px;">
+            <h2>Admin Toegang</h2>
+            <input type="password" id="admin-password" placeholder="Voer wachtwoord in">
+            <button class="admin-button" onclick="checkAdminPassword()">Activeer Admin Modus</button>
+        </div>
+        
+        <!-- ADMIN DASHBOARD GEBIED -->
+        <div id="admin-dashboard" class="hidden">
+            <hr style="border-color: #5864c8; margin-top: 20px;">
+            <h2>Admin Dashboard (Simulatie)</h2>
+            <p style="margin: 15px 0 20px;">Klik op een locatie om succes te simuleren en de geheime info te tonen.</p>
+            <div id="location-list">
+                <!-- Locatieknoppen komen hier -->
+            </div>
+            <button class="admin-button" onclick="stopAdminMode()">Verlaat Admin Modus</button>
+        </div>
+
     </div>
 
     <script>
         // *** CONFIGURATIE ***
-        const TARGET_LOCATION = {
-            // 51°12'21.8"N is 51.205778
-            latitude: 51.205778, 
-            // 4°29'34.1"E is 4.492806
-            longitude: 4.492806, 
-            info: "Je bent er, hier is wat informatie - GEFELICITEERD! 🎉"
-        };
         const PROXIMITY_RADIUS_METERS = 20; 
+        const ADMIN_PASSWORD = "admin456"; // Het wachtwoord voor de admin-modus
+
+        // Dit array bevat nu alleen de oorspronkelijk gevraagde locatie met de nieuwe tekst.
+        const ALL_LOCATIONS = [
+            {
+                name: "Geheime Ophaalpunt",
+                latitude: 51.205778, 
+                longitude: 4.492806, 
+                info: "Je bent er, hier is wat informatie"
+            }
+        ];
 
         // *** STATE & DOM ELEMENTEN ***
         let watchID = null; // Opslag voor de actieve watch-ID
@@ -161,6 +214,12 @@
         const infoDisplay = document.getElementById('info-display');
         const errorDisplay = document.getElementById('error-display');
         const locationButton = document.getElementById('location-button');
+
+        const adminLoginArea = document.getElementById('admin-login-area');
+        const adminDashboard = document.getElementById('admin-dashboard');
+        const adminPasswordInput = document.getElementById('admin-password');
+        const locationList = document.getElementById('location-list');
+
 
         // *** GEOLOCATIE FUNCTIES ***
 
@@ -190,19 +249,34 @@
             const userLat = position.coords.latitude;
             const userLon = position.coords.longitude;
             
-            // Bereken de afstand tot het doel
-            const distance = getDistance(userLat, userLon, TARGET_LOCATION.latitude, TARGET_LOCATION.longitude);
+            let closestDistance = Infinity;
+            let closestLocationInfo = null;
 
-            // Update status met huidige positie en afstand
+            // Loop door alle locaties om de dichtstbijzijnde te vinden (nu slechts 1)
+            for (const target of ALL_LOCATIONS) {
+                const distance = getDistance(userLat, userLon, target.latitude, target.longitude);
+                
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                }
+
+                if (distance <= PROXIMITY_RADIUS_METERS) {
+                    // Als we binnen de straal zijn, tonen we de info
+                    closestLocationInfo = target.info;
+                    break; 
+                }
+            }
+
+            // Update status met dichtstbijzijnde afstand
             statusDisplay.innerHTML = `
                 **Tracking Actief** (Nauwkeurigheid: ${position.coords.accuracy.toFixed(1)}m)<br>
                 📍 Huidige Positie: ${userLat.toFixed(5)}, ${userLon.toFixed(5)}<br>
-                ➡️ Afstand tot Doel: <span style="color: ${distance <= PROXIMITY_RADIUS_METERS ? '#66FF66' : '#FF9999'}">${distance.toFixed(2)} meter</span>
+                ➡️ Afstand tot Doel: <span style="color: ${closestDistance <= PROXIMITY_RADIUS_METERS ? '#66FF66' : '#FF9999'}">${closestDistance.toFixed(2)} meter</span>
             `;
             
-            // Controleer of de gebruiker binnen de straal is (20 meter)
-            if (distance <= PROXIMITY_RADIUS_METERS) {
-                infoDisplay.innerHTML = TARGET_LOCATION.info;
+            // Toon/verberg geheime info
+            if (closestLocationInfo) {
+                infoDisplay.innerHTML = closestLocationInfo;
                 infoDisplay.classList.remove('hidden');
                 statusDisplay.style.backgroundColor = '#2e7d32'; // Groene status
             } else {
@@ -227,7 +301,6 @@
                 errorMessage = "Locatie informatie is niet beschikbaar. Probeer het later opnieuw.";
             } else if (err.code === 3) {
                  errorMessage = "Time-out: locatie kon niet op tijd worden bepaald. Probeer opnieuw.";
-                 // Voor deze fout laten we de watcher lopen, tenzij de gebruiker stopt
             } 
             
             statusDisplay.innerHTML = 'Locatie niet beschikbaar.';
@@ -268,6 +341,7 @@
             }
             
             // Monitor is gestopt, dus start deze
+            adminLoginArea.classList.add('hidden'); // Verberg admin login
             locationButton.textContent = "Stop Locatie Check";
             locationButton.classList.add('active'); // Voeg actieve klasse toe
 
@@ -284,6 +358,88 @@
                 timeout: 5000,
                 maximumAge: 0
             });
+        }
+        
+        // *** ADMIN FUNCTIES ***
+
+        /**
+         * Checkt het wachtwoord en activeert de admin modus.
+         */
+        function checkAdminPassword() {
+            const enteredPassword = adminPasswordInput.value;
+            if (enteredPassword === ADMIN_PASSWORD) {
+                enterAdminMode();
+            } else {
+                adminPasswordInput.value = '';
+                errorDisplay.innerHTML = 'Ongeldig wachtwoord voor Admin Modus.';
+                errorDisplay.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * Rendert de knoppen voor alle locaties in het dashboard (nu slechts 1).
+         */
+        function renderLocationList() {
+            locationList.innerHTML = '';
+            ALL_LOCATIONS.forEach((location, index) => {
+                const button = document.createElement('button');
+                button.className = 'location-button';
+                button.innerHTML = `Simuleer: ${location.name}`;
+                button.onclick = () => simulateLocation(index);
+                locationList.appendChild(button);
+            });
+        }
+
+        /**
+         * Activeert de admin modus: stopt tracking en toont dashboard.
+         */
+        function enterAdminMode() {
+            // 1. Stop normale tracking als deze actief is
+            stopLocationCheck(false); 
+
+            // 2. Toon dashboard en verberg login/normale knop
+            adminLoginArea.classList.add('hidden');
+            locationButton.classList.add('hidden');
+            adminDashboard.classList.remove('hidden');
+            errorDisplay.classList.add('hidden');
+            infoDisplay.classList.add('hidden');
+            
+            // 3. Update status
+            statusDisplay.style.backgroundColor = '#795548'; 
+            statusDisplay.innerHTML = 'ADMIN MODUS ACTIEF. Geolocation is uitgeschakeld.';
+
+            // 4. Render de locatielijst
+            renderLocationList();
+        }
+
+        /**
+         * Verlaat de admin modus en toont de normale UI.
+         */
+        function stopAdminMode() {
+            adminDashboard.classList.add('hidden');
+            adminLoginArea.classList.remove('hidden');
+            locationButton.classList.remove('hidden');
+            adminPasswordInput.value = ''; // Wachtwoord wissen
+            statusDisplay.style.backgroundColor = '#3b3a4d';
+            statusDisplay.innerHTML = 'Druk op de knop om de locatiecheck te starten.';
+        }
+
+        /**
+         * Simuleert dat de gebruiker op een specifieke locatie is.
+         */
+        function simulateLocation(index) {
+            const location = ALL_LOCATIONS[index];
+            
+            // Simuleer succes en toon info - TOONT NU EXACT DE GEBRUIKERSINFO
+            infoDisplay.innerHTML = location.info;
+            infoDisplay.classList.remove('hidden');
+            
+            // Update status (dit is admin-specifiek)
+            statusDisplay.innerHTML = `
+                **ADMIN SIMULATIE:** U bent nu op **${location.name}**.<br>
+                De geheime informatie is ontgrendeld.
+            `;
+            statusDisplay.style.backgroundColor = '#2e7d32'; // Groen voor simulatie succes
         }
     </script>
 </body>
