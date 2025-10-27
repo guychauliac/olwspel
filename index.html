@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scout Locatie Missie</title>
-    <!-- Laad een robuuster lettertype, zoals 'Roboto Slab' of 'Bree Serif' --><link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    
+
+<link href="https://fonts.googleapis.com/css2?family=Bree+Serif&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* Globale Stijlen en Reset */
         body {
@@ -66,6 +68,17 @@
             border-left: 5px solid #388e3c; /* Accent balk in donkergroen */
             transition: all 0.3s ease;
             text-align: left;
+        }
+        
+        /* Hyperlink in status bericht */
+        .status-message a {
+            color: #1b5e20; /* Zelfde kleur als de tekst */
+            text-decoration: underline;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+        .status-message a:hover {
+            color: #00796b; /* Iets donkerder/ander groen bij hover */
         }
 
         /* Specifieke waarschuwing voor nauwkeurigheid (geel/oranje - zonsondergang/vuur) */
@@ -196,14 +209,22 @@
         </div>
 
         <div id="info-display" class="hidden target-info">
-            <!-- Informatie verschijnt hier als je dichtbij bent --></div>
+            
+
+</div>
 
         <div id="error-display" class="error-message hidden">
-            <!-- Eventuele foutmeldingen komen hier --></div>
+            
 
-        <!-- Normale Spelmodus Knop --><button id="location-button" class="location-button" onclick="toggleLocationCheck()">Start Missie</button>
+</div>
 
-        <!-- ADMIN LOGIN GEBIED --><div id="admin-login-area">
+        
+
+<button id="location-button" class="location-button" onclick="toggleLocationCheck()">Start Missie</button>
+
+        
+
+<div id="admin-login-area">
             <hr>
             <h2>Kamp Hoofdkwartier Toegang (Simulatie)</h2>
             <input type="password" id="admin-password" placeholder="Wachtwoord H.Q.">
@@ -215,16 +236,22 @@
             <button class="admin-button" style="background-color: #ff9800;" onclick="checkDebugAdminPassword()">Activeer Verkenner Modus</button>
         </div>
         
-        <!-- ADMIN DASHBOARD GEBIED --><div id="admin-dashboard" class="hidden">
+        
+
+<div id="admin-dashboard" class="hidden">
             <hr>
             <h2>Kamp Hoofdkwartier (Simulatie)</h2>
             <p style="margin: 15px 0 20px;">Klik op een locatie om deze te 'vinden' en de info te tonen.</p>
             <div id="location-list">
-                <!-- Locatieknoppen komen hier --></div>
+                
+
+</div>
             <button class="admin-button" onclick="stopAdminMode()">Verlaat H.Q. Modus</button>
         </div>
 
-        <!-- NIEUW: STOP KNOP VOOR DEBUG MODUS --><button id="debug-stop-button" class="admin-button hidden" onclick="stopDebugAdminMode()">Verlaat Verkenner Modus</button>
+        
+
+<button id="debug-stop-button" class="admin-button hidden" onclick="stopDebugAdminMode()">Verlaat Verkenner Modus</button>
 
     </div>
 
@@ -297,6 +324,14 @@
             const userLat = position.coords.latitude;
             const userLon = position.coords.longitude;
             const accuracy = position.coords.accuracy; // Haal nauwkeurigheid op
+            
+            // Maak de Google Maps link
+            const mapLink = `https://www.google.com/maps/search/?api=1&query=${userLat},${userLon}`;
+            
+            // Maak de klikbare positie string
+            const clickablePosition = `<a href="${mapLink}" target="_blank" title="Open in Google Maps">
+                                        ${userLat.toFixed(5)}, ${userLon.toFixed(5)}
+                                    </a>`;
 
             // Controleer op te lage nauwkeurigheid (alleen in normale modus)
             if (!isDebugAdminMode && accuracy >= 2000) {
@@ -306,6 +341,7 @@
                 statusDisplay.innerHTML = `
                     ⚠️ **LET OP! LOCATIE ONNAUWKEURIG!** ⚠️<br>
                     Gemeten nauwkeurigheid: **${accuracy.toFixed(1)}m**.<br>
+                    **Huidige Positie:** ${clickablePosition}<br>
                     **Oplossing:** Wijzig de rechten van uw browser (bijv. Chrome) zodat deze gebruik kan maken van de exacte locatie en herstart de Missie.
                 `;
                 infoDisplay.classList.add('hidden');
@@ -344,7 +380,7 @@
 
             let statusHtml = `
                 **Verkenner Actief** (Nauwkeurigheid: ${position.coords.accuracy.toFixed(1)}m)<br>
-                📍 Huidige Positie: ${userLat.toFixed(5)}, ${userLon.toFixed(5)}
+                📍 Huidige Positie: ${clickablePosition}
             `;
             
             let isClose = false;
@@ -653,3 +689,4 @@
     </script>
 </body>
 </html>
+    
