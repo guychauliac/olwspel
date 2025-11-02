@@ -360,7 +360,7 @@
 
             qnaLocationName.textContent = location.name;
             qnaQuestion.textContent = location.question;
-            qnaInput.value = ''; // Vorige input wissen
+            qnaInput.value = ''; // Vorige input MOET hier gewist worden, anders ziet men een oud antwoord
             qnaFeedback.classList.add('hidden');
 
             infoDisplay.classList.add('hidden'); // Verberg de info display
@@ -403,6 +403,15 @@
                         timeout: 5000,
                         maximumAge: 0
                     });
+                }
+                
+                // Als de simulatie actief was, update de status om de succesvolle Q&A te tonen
+                if (adminDashboard.classList.contains('hidden') === false) {
+                     statusDisplay.innerHTML = `
+                        **KAMP H.Q. RAPPORT (TEST GESLAAGD):** Vraag voor **${location.name}** correct beantwoord.
+                    `;
+                    statusDisplay.style.backgroundColor = '#c5e1a5';
+                    statusDisplay.style.color = '#3e2723';
                 }
 
             } else {
@@ -469,7 +478,7 @@
                     if (target.question && !target.answered) {
                         // Locatie gevonden, vraag moet gesteld worden
                         foundLocationToQuestion = i;
-                        // Als we in normale modus zijn, stoppen we hier en stellen de vraag.
+                        // In normale modus stoppen we met zoeken als een vraag is gevonden
                         if (!isDebugAdminMode) break; 
                     } else {
                         // Locatie gevonden, al beantwoord of geen vraag
@@ -491,7 +500,6 @@
                 📍 Huidige Positie: ${clickablePosition}
             `;
             
-            let isClose = false;
             let displayColor = '#e8f5e9'; // Standaard achtergrond van status-message (lichtgroen)
             let textColor = '#1b5e20'; // Standaard tekstkleur (donkergroen)
 
@@ -502,7 +510,6 @@
                 textColor = '#e65100'; // Donkeroranje tekst
             } else if (closestDistance <= DISTANCE_DISPLAY_THRESHOLD_METERS) {
                 // Toon afstand alleen als we binnen de 100m drempel zijn (normale modus)
-                isClose = true;
                 const distanceColor = closestDistance <= PROXIMITY_RADIUS_METERS ? '#4CAF50' : '#ff9800'; 
                 statusHtml += `<br>➡️ Afstand tot Dichtstbijzijnde Doel: <span style="color: ${distanceColor}">${closestDistance.toFixed(2)} meter</span>`;
             } else {
@@ -516,18 +523,35 @@
             // --- Einde Status HTML opbouw ---
             
             
-            // --- Toon/Verberg Geheime Info / Vraag ---
-            qnaArea.classList.add('hidden'); // Verberg V&A standaard
-            infoDisplay.classList.add('hidden'); // Verberg info standaard
+            // --- Toon/Verberg Geheime Info / Vraag (FIXED LOGIC) ---
+            infoDisplay.classList.add('hidden'); 
 
             if (foundLocationToQuestion !== -1 && !isDebugAdminMode) {
-                // Vraag moet gesteld worden (in normale modus)
-                displayQuestion(foundLocationToQuestion);
-            } else if (achievedLocationsInfo.length > 0) {
-                // Alleen geheime info tonen (of in debug modus)
-                infoDisplay.innerHTML = achievedLocationsInfo.join('<hr style="margin: 10px 0; border-color: rgba(255,255,255,0.2);">');
-                infoDisplay.classList.remove('hidden');
-            } 
+                // We zijn bij een locatie met een onbeantwoorde vraag (Normale modus)
+
+                // FIX: Toon de vraag ALLEEN als deze nog niet getoond is (of we zijn van locatie gewisseld)
+                const isQnaAreaVisible = !qnaArea.classList.contains('hidden');
+                const isCorrectQuestionShowing = currentQuestionIndex === foundLocationToQuestion;
+                
+                if (!isQnaAreaVisible || !isCorrectQuestionShowing) {
+                    // Start de V&A sessie
+                    displayQuestion(foundLocationToQuestion);
+                }
+                // ANDERS: de V&A area is al zichtbaar en we laten de gebruiker rustig typen.
+                
+            } else {
+                // We zijn NIET bij een vraag-locatie (of we zijn in debug mode)
+                
+                // Verberg de Q&A area en reset de index
+                qnaArea.classList.add('hidden'); 
+                currentQuestionIndex = -1;
+                
+                if (achievedLocationsInfo.length > 0) {
+                    // Alleen geheime info tonen (in debug mode of als al beantwoord)
+                    infoDisplay.innerHTML = achievedLocationsInfo.join('<hr style="margin: 10px 0; border-color: rgba(255,255,255,0.2);">');
+                    infoDisplay.classList.remove('hidden');
+                } 
+            }
         }
 
         /**
@@ -793,31 +817,50 @@
 
         /**
          * Simuleert dat de gebruiker op een specifieke locatie is.
+         * Aangepast om de V&A-logica te testen in plaats van deze te omzeilen.
          */
         function simulateLocation(index) {
             const location = ALL_LOCATIONS[index];
             
-            // Simuleer antwoord op de vraag indien aanwezig
-            if (location.question && !location.answered) {
-                location.answered = true;
-                statusDisplay.innerHTML = `**KAMP H.Q. RAPPORT:** Vraag voor **${location.name}** automatisch beantwoord.`;
-                statusDisplay.style.backgroundColor = '#dcedc8';
-            } else {
-                statusDisplay.innerHTML = `**KAMP H.Q. RAPPORT:** Locatie **${location.name}** is gevonden.`;
-                statusDisplay.style.backgroundColor = '#c5e1a5';
-            }
-            
-            // Simuleer succes en toon info
-            infoDisplay.innerHTML = `<h3>✅ Gevonden: ${location.name}</h3><p>${location.info}</p>`;
-            infoDisplay.classList.remove('hidden');
-            
-            // Update status (dit is admin-specifiek)
-            statusDisplay.classList.remove('accuracy-warning');
-            statusDisplay.style.color = '#3e2723';
-            statusDisplay.innerHTML += `<br>De geheime informatie is ontgrendeld.`;
+            infoDisplay.classList.add('hidden'); // Vorige info wissen
+            qnaArea.classList.add('hidden'); // V&A verbergen
+            currentQuestionIndex = -1; // Reset state
 
-            qnaArea.classList.add('hidden'); // Verberg V&A bij simulatie
-            currentQuestionIndex = -1;
+            // Controleer of er een vraag is die nog beantwoord moet worden
+            if (location.question && !location.answered) {
+                // Setup state needed for checkAnswer()
+                currentQuestionIndex = index;
+
+                // Display the question box in admin status
+                qnaArea.classList.remove('hidden');
+                qnaLocationName.textContent = location.name;
+                qnaQuestion.textContent = location.question;
+                qnaInput.value = '';
+                qnaFeedback.classList.add('hidden');
+                
+                // Update status om aan te geven dat we in testmodus zijn
+                statusDisplay.innerHTML = `
+                    **KAMP H.Q. RAPPORT:** Locatie **${location.name}** gevonden. 
+                    **TEST MODUS:** Beantwoord de vraag hieronder om de info te ontgrendelen.
+                `;
+                statusDisplay.style.backgroundColor = '#ffcc80'; // Markeer Admin Test Mode (oranje)
+                statusDisplay.style.color = '#e65100';
+
+            } else {
+                // Geen vraag of al beantwoord (standaard bypass/reveal gedrag)
+                if (location.answered) {
+                     statusDisplay.innerHTML = `**KAMP H.Q. RAPPORT:** Locatie **${location.name}** was al beantwoord.`;
+                     statusDisplay.style.backgroundColor = '#dcedc8';
+                } else {
+                    statusDisplay.innerHTML = `**KAMP H.Q. RAPPORT:** Locatie **${location.name}** is gevonden. (Geen vraag nodig)`;
+                    statusDisplay.style.backgroundColor = '#c5e1a5';
+                }
+                
+                // Toon info onmiddellijk
+                infoDisplay.innerHTML = `<h3>✅ Gevonden: ${location.name}</h3><p>${location.info}</p>`;
+                infoDisplay.classList.remove('hidden');
+                statusDisplay.style.color = '#3e2723';
+            }
         }
     </script>
 </body>
