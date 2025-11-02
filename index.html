@@ -147,7 +147,7 @@
         }
 
         /* Admin specifieke stijl */
-        #admin-login-area input {
+        #admin-login-area input, #qna-area input[type="text"] {
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #a1887f; /* Bruine rand */
@@ -164,6 +164,15 @@
         }
         #admin-dashboard .location-button:hover {
             background-color: #6d4c41;
+        }
+        
+        /* QNA Submit Button (Oranje/Vuur) */
+        #qna-area .location-button {
+            background-color: #ef6c00 !important; /* Fel oranje */
+            box-shadow: 0 4px 10px rgba(239, 108, 0, 0.3);
+        }
+        #qna-area .location-button:hover {
+            background-color: #e65100 !important;
         }
 
         /* Debug Stop Knop (Oranje/Vuur) */
@@ -217,6 +226,18 @@
             
 
 </div>
+        
+        <!-- NIEUW: Vraag-en-Antwoord Gebied -->
+        <div id="qna-area" class="hidden" style="margin-top: 20px; text-align: left;">
+            <hr>
+            <h2 style="margin-top: 0;">Geheime Vraag voor <span id="qna-location-name"></span></h2>
+            <p id="qna-question" style="font-weight: bold; color: #388e3c; font-size: 1.2em;"></p>
+            <input type="text" id="qna-input" placeholder="Voer je antwoord hier in" onkeyup="if(event.key === 'Enter') checkAnswer()">
+            <button class="location-button" style="background-color: #f57c00;" onclick="checkAnswer()">Controleer Antwoord</button>
+            <div id="qna-feedback" class="error-message hidden"></div>
+            <hr>
+        </div>
+        <!-- EINDE NIEUW V&A -->
 
         
 
@@ -268,21 +289,27 @@
         const ALL_LOCATIONS = [
             {
                 name: "Geheime Ophaalpunt (Antwerpen)",
-                latitude: 51.204790, 
-                longitude: 4.490619, 
-                info: "Goed gedaan, zoek nu op het pleintje" // Aangepast naar de nieuwe aanwijzing
+                latitude: 51.20475729868032, 
+                longitude: 4.490484435540021, 
+                info: "Goed gedaan, zoek nu op het pleintje",
+                question: "Welke kleur heeft gras?", // NIEUW: Vraag
+                answer: "groen", // NIEUW: Antwoord (case-insensitive)
+                answered: false // NIEUW: Status om bij te houden of de vraag beantwoord is
             },
             {
                 name: "Tweede Punt (Dichtbijzijnd)",
                 latitude: 51.2045, 
                 longitude: 4.49147, 
-                info: "fantastisch, je bent op de tweede locatie"
+                info: "fantastisch, je bent op de tweede locatie",
+                answered: false
             }
         ];
 
         // *** STATE & DOM ELEMENTEN ***
         let watchID = null; // Opslag voor de actieve watch-ID
-        let isDebugAdminMode = false; // NIEUW: Staat om de debug-modus te volgen
+        let isDebugAdminMode = false; // Staat om de debug-modus te volgen
+        let currentQuestionIndex = -1; // NIEUW: Houdt de index van de huidige vraag bij
+        
         const statusDisplay = document.getElementById('status-display');
         const infoDisplay = document.getElementById('info-display');
         const errorDisplay = document.getElementById('error-display');
@@ -291,12 +318,19 @@
         const adminLoginArea = document.getElementById('admin-login-area');
         const adminDashboard = document.getElementById('admin-dashboard');
         const adminPasswordInput = document.getElementById('admin-password');
-        const debugPasswordInput = document.getElementById('debug-password'); // NIEUW
-        const debugStopButton = document.getElementById('debug-stop-button'); // NIEUW
+        const debugPasswordInput = document.getElementById('debug-password'); 
+        const debugStopButton = document.getElementById('debug-stop-button'); 
         const locationList = document.getElementById('location-list');
 
+        // NIEUW Q&A DOM elementen
+        const qnaArea = document.getElementById('qna-area');
+        const qnaLocationName = document.getElementById('qna-location-name');
+        const qnaQuestion = document.getElementById('qna-question');
+        const qnaInput = document.getElementById('qna-input');
+        const qnaFeedback = document.getElementById('qna-feedback');
 
-        // *** GEOLOCATIE FUNCTIES ***
+
+        // *** GEOLOCATIE & AFSTAND FUNCTIES ***
 
         /**
          * Functie om de afstand tussen twee coördinaten te berekenen (Haversine formule).
@@ -316,6 +350,69 @@
 
             return R * c; // Afstand in meters
         }
+        
+        /**
+         * Toont de vraag-en-antwoord interface voor de gevonden locatie.
+         */
+        function displayQuestion(index) {
+            const location = ALL_LOCATIONS[index];
+            currentQuestionIndex = index;
+
+            qnaLocationName.textContent = location.name;
+            qnaQuestion.textContent = location.question;
+            qnaInput.value = ''; // Vorige input wissen
+            qnaFeedback.classList.add('hidden');
+
+            infoDisplay.classList.add('hidden'); // Verberg de info display
+            qnaArea.classList.remove('hidden');
+        }
+
+        /**
+         * Controleert het door de gebruiker ingevoerde antwoord.
+         */
+        function checkAnswer() {
+            if (currentQuestionIndex === -1) return;
+
+            const location = ALL_LOCATIONS[currentQuestionIndex];
+            const userAnswer = qnaInput.value.trim().toLowerCase();
+            const correctAnswer = location.answer.toLowerCase();
+
+            if (userAnswer === correctAnswer) {
+                // Antwoord is correct
+                location.answered = true; // Markeer als beantwoord
+                
+                // Vrijgeven van de informatie
+                infoDisplay.innerHTML = `<h3>✅ Gevonden: ${location.name}</h3><p>${location.info}</p>`;
+                infoDisplay.classList.remove('hidden');
+                
+                // Verberg Q&A en toon succesbericht
+                qnaArea.classList.add('hidden');
+                
+                statusDisplay.style.backgroundColor = '#dcedc8';
+                statusDisplay.style.color = '#1b5e20';
+                statusDisplay.innerHTML = `
+                    **GEFELICITEERD!** Het antwoord was correct. De geheime informatie is nu ontgrendeld.
+                `;
+
+                currentQuestionIndex = -1; // Reset index
+                
+                // Optioneel: Update de positie nu de vraag beantwoord is om de status te verversen
+                if (watchID !== null) {
+                    navigator.geolocation.getCurrentPosition(success, error, {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
+                    });
+                }
+
+            } else {
+                // Antwoord is fout
+                qnaFeedback.innerHTML = `**Fout antwoord.** Probeer het opnieuw!`;
+                qnaFeedback.classList.remove('hidden');
+                qnaInput.value = ''; // Input wissen
+            }
+        }
+
 
         /**
          * Succes-callback voor de geolocatie.
@@ -335,7 +432,6 @@
 
             // Controleer op te lage nauwkeurigheid (alleen in normale modus)
             if (!isDebugAdminMode && accuracy >= 2000) {
-                // Voeg de specifieke waarschuwingsklasse toe
                 statusDisplay.classList.add('accuracy-warning'); 
                 
                 statusDisplay.innerHTML = `
@@ -345,6 +441,7 @@
                     **Oplossing:** Wijzig de rechten van uw browser (bijv. Chrome) zodat deze gebruik kan maken van de exacte locatie en herstart de Missie.
                 `;
                 infoDisplay.classList.add('hidden');
+                qnaArea.classList.add('hidden'); // Verberg V&A bij nauwkeurigheidsfout
                 errorDisplay.classList.add('hidden');
                 return; // Stop de verwerking van de locatie.
             }
@@ -353,11 +450,13 @@
             statusDisplay.classList.remove('accuracy-warning');
             
             let closestDistance = Infinity;
-            let achievedLocationsInfo = []; // Houd alle bereikte locaties bij
+            let achievedLocationsInfo = []; // Houd alle behaalde (en beantwoordde) locaties bij
             let allDistancesHtml = ''; // Voor debug modus
+            let foundLocationToQuestion = -1; // Index van de locatie waarvoor een vraag moet worden gesteld
 
             // Loop door alle locaties om de dichtstbijzijnde te vinden en de status te controleren
-            for (const target of ALL_LOCATIONS) {
+            for (let i = 0; i < ALL_LOCATIONS.length; i++) {
+                const target = ALL_LOCATIONS[i];
                 const distance = getDistance(userLat, userLon, target.latitude, target.longitude);
                 
                 // Bepaal de dichtstbijzijnde afstand
@@ -367,7 +466,15 @@
 
                 // Check of de locatie bereikt is
                 if (distance <= PROXIMITY_RADIUS_METERS) {
-                    achievedLocationsInfo.push(`<h3>✅ Gevonden: ${target.name}</h3><p>${target.info}</p>`); 
+                    if (target.question && !target.answered) {
+                        // Locatie gevonden, vraag moet gesteld worden
+                        foundLocationToQuestion = i;
+                        // Als we in normale modus zijn, stoppen we hier en stellen de vraag.
+                        if (!isDebugAdminMode) break; 
+                    } else {
+                        // Locatie gevonden, al beantwoord of geen vraag
+                        achievedLocationsInfo.push(`<h3>✅ Gevonden: ${target.name}</h3><p>${target.info}</p>`); 
+                    }
                 }
                 
                 // Verzamel afstanden voor debug mode
@@ -378,6 +485,7 @@
                 }
             }
 
+            // --- Status HTML opbouw ---
             let statusHtml = `
                 **Verkenner Actief** (Nauwkeurigheid: ${position.coords.accuracy.toFixed(1)}m)<br>
                 📍 Huidige Positie: ${clickablePosition}
@@ -402,23 +510,24 @@
             }
             
             statusDisplay.innerHTML = statusHtml;
-            
-            // Toon/verberg geheime info
-            if (achievedLocationsInfo.length > 0) {
-                infoDisplay.innerHTML = achievedLocationsInfo.join('<hr style="margin: 10px 0; border-color: rgba(255,255,255,0.2);">');
-                infoDisplay.classList.remove('hidden');
-                // De achtergrondkleur van statusDisplay wordt niet overschreven bij succes; de infoDisplay springt in het oog.
-            } else if (!isDebugAdminMode) { 
-                infoDisplay.classList.add('hidden');
-            } else if (isDebugAdminMode && !isClose) {
-                // Als we in debug modus zijn maar niets hebben gevonden, kunnen we de info leegmaken
-                infoDisplay.innerHTML = 'Nog geen locatie gevonden.';
-                infoDisplay.classList.remove('hidden');
-            }
-
             statusDisplay.style.backgroundColor = displayColor;
             statusDisplay.style.color = textColor;
             errorDisplay.classList.add('hidden'); // Verberg foutmelding bij succes
+            // --- Einde Status HTML opbouw ---
+            
+            
+            // --- Toon/Verberg Geheime Info / Vraag ---
+            qnaArea.classList.add('hidden'); // Verberg V&A standaard
+            infoDisplay.classList.add('hidden'); // Verberg info standaard
+
+            if (foundLocationToQuestion !== -1 && !isDebugAdminMode) {
+                // Vraag moet gesteld worden (in normale modus)
+                displayQuestion(foundLocationToQuestion);
+            } else if (achievedLocationsInfo.length > 0) {
+                // Alleen geheime info tonen (of in debug modus)
+                infoDisplay.innerHTML = achievedLocationsInfo.join('<hr style="margin: 10px 0; border-color: rgba(255,255,255,0.2);">');
+                infoDisplay.classList.remove('hidden');
+            } 
         }
 
         /**
@@ -444,6 +553,7 @@
             statusDisplay.innerHTML = 'Locatie niet beschikbaar.';
             errorDisplay.innerHTML = `Fout: ${errorMessage}`;
             errorDisplay.classList.remove('hidden');
+            qnaArea.classList.add('hidden'); // Verberg V&A bij fout
         }
 
         /**
@@ -469,6 +579,10 @@
             locationButton.textContent = "Start Missie";
             locationButton.classList.remove('active'); // Verwijder actieve klasse
             
+            // Verberg V&A en reset index
+            qnaArea.classList.add('hidden');
+            currentQuestionIndex = -1;
+
             if (!isError) {
                 statusDisplay.innerHTML = 'Missie gepauzeerd. Druk op de knop om de reis te vervolgen.';
                 statusDisplay.style.backgroundColor = '#e8f5e9';
@@ -500,6 +614,8 @@
             isDebugAdminMode = false; // Zet debug uit
             adminDashboard.classList.add('hidden'); // Verberg dashboard
             debugStopButton.classList.add('hidden'); // Verberg debug stop knop
+            qnaArea.classList.add('hidden'); // Verberg V&A bij start
+            currentQuestionIndex = -1; // Reset index
             
             // Monitor is gestopt, dus start deze
             locationButton.textContent = "Pauzeer Missie";
@@ -581,6 +697,8 @@
             adminDashboard.classList.remove('hidden');
             errorDisplay.classList.add('hidden');
             infoDisplay.classList.add('hidden');
+            qnaArea.classList.add('hidden'); // Verberg V&A in admin modus
+            currentQuestionIndex = -1;
             
             // 3. Update status
             statusDisplay.classList.remove('accuracy-warning');
@@ -609,6 +727,8 @@
             debugStopButton.classList.remove('hidden'); // Toon stop debug knop
             errorDisplay.classList.add('hidden');
             infoDisplay.classList.add('hidden');
+            qnaArea.classList.add('hidden'); // Verberg V&A in debug modus
+            currentQuestionIndex = -1;
             
             // 4. Start de locatie check in debug mode (als deze nog niet actief is)
             if (watchID === null) {
@@ -639,6 +759,8 @@
             statusDisplay.style.color = '#1b5e20';
             statusDisplay.innerHTML = 'Druk op de knop om je reis te beginnen.';
             infoDisplay.classList.add('hidden');
+            qnaArea.classList.add('hidden');
+            currentQuestionIndex = -1;
         }
         
         /**
@@ -665,6 +787,8 @@
             statusDisplay.style.color = '#1b5e20';
             statusDisplay.innerHTML = 'Druk op de knop om je reis te beginnen.';
             infoDisplay.classList.add('hidden');
+            qnaArea.classList.add('hidden');
+            currentQuestionIndex = -1;
         }
 
         /**
@@ -673,6 +797,16 @@
         function simulateLocation(index) {
             const location = ALL_LOCATIONS[index];
             
+            // Simuleer antwoord op de vraag indien aanwezig
+            if (location.question && !location.answered) {
+                location.answered = true;
+                statusDisplay.innerHTML = `**KAMP H.Q. RAPPORT:** Vraag voor **${location.name}** automatisch beantwoord.`;
+                statusDisplay.style.backgroundColor = '#dcedc8';
+            } else {
+                statusDisplay.innerHTML = `**KAMP H.Q. RAPPORT:** Locatie **${location.name}** is gevonden.`;
+                statusDisplay.style.backgroundColor = '#c5e1a5';
+            }
+            
             // Simuleer succes en toon info
             infoDisplay.innerHTML = `<h3>✅ Gevonden: ${location.name}</h3><p>${location.info}</p>`;
             infoDisplay.classList.remove('hidden');
@@ -680,11 +814,10 @@
             // Update status (dit is admin-specifiek)
             statusDisplay.classList.remove('accuracy-warning');
             statusDisplay.style.color = '#3e2723';
-            statusDisplay.innerHTML = `
-                **KAMP H.Q. RAPPORT:** Locatie **${location.name}** is gevonden.<br>
-                De geheime informatie is ontgrendeld.
-            `;
-            statusDisplay.style.backgroundColor = '#c5e1a5'; // Licht groen voor simulatie succes
+            statusDisplay.innerHTML += `<br>De geheime informatie is ontgrendeld.`;
+
+            qnaArea.classList.add('hidden'); // Verberg V&A bij simulatie
+            currentQuestionIndex = -1;
         }
     </script>
 </body>
